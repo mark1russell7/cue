@@ -1,16 +1,39 @@
 #!/usr/bin/env node
 
-import { execSync, spawnSync, type SpawnSyncReturns } from 'node:child_process';
+import { execSync, spawnSync } from 'node:child_process';
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 // Types
-type ConfigType = 'esm' | 'cjs' | 'commonjs' | 'frontend' | 'browser';
+interface Feature {
+  description: string;
+  requires?: string[];
+  gitignore?: string[];
+  tsconfig?: string;
+  devDependencies?: Record<string, string>;
+  peerDependencies?: Record<string, string>;
+  scripts?: Record<string, string>;
+  packageFields?: Record<string, unknown>;
+  generates?: string[];
+}
 
-interface ParsedArgs {
-  _: string[];
-  [key: string]: string | boolean | string[];
+interface FeaturesManifest {
+  features: Record<string, Feature>;
+  defaults: Record<string, string[]>;
+}
+
+interface Dependencies {
+  $schema?: string;
+  name: string;
+  scope?: string;
+  version?: string;
+  description?: string;
+  license?: string;
+  author?: string;
+  features: string[];
+  tsconfig?: string;
+  packageJson?: Record<string, unknown>;
 }
 
 interface PackageJson {
@@ -21,39 +44,219 @@ interface PackageJson {
   [key: string]: unknown;
 }
 
+interface ParsedArgs {
+  _: string[];
+  [key: string]: string | boolean | string[];
+}
+
 // Constants
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const packageRoot = resolve(__dirname, '..');
 
-const CONFIG_TYPES: readonly ConfigType[] = ['esm', 'cjs', 'commonjs', 'frontend', 'browser'] as const;
-
-const TSCONFIG_PATHS: Record<ConfigType, string> = {
-  esm: '@mark1russell7/cue/ts/config/tsconfig/esm.lib.json',
-  cjs: '@mark1russell7/cue/ts/config/tsconfig/commonjs.lib.json',
-  commonjs: '@mark1russell7/cue/ts/config/tsconfig/commonjs.lib.json',
-  frontend: '@mark1russell7/cue/ts/config/tsconfig/frontend.json',
-  browser: '@mark1russell7/cue/ts/config/tsconfig/frontend.json',
+// Tsconfig mapping: feature tsconfig value -> actual file path
+const TSCONFIG_FILES: Record<string, string> = {
+  'esm': 'esm.json',
+  'esm.lib': 'esm.lib.json',
+  'commonjs': 'commonjs.json',
+  'commonjs.lib': 'commonjs.lib.json',
+  'frontend': 'frontend.json',
+  'react': 'react.json',
+  'shared': 'shared.json',
+  'lib': 'lib.json',
 };
+
+// Load features manifest
+function loadFeatures(): FeaturesManifest {
+  const featuresPath = resolve(packageRoot, 'features.json');
+  if (!existsSync(featuresPath)) {
+    console.error('Error: features.json not found in package');
+    process.exit(1);
+  }
+  return JSON.parse(readFileSync(featuresPath, 'utf-8')) as FeaturesManifest;
+}
+
+// Load project dependencies.json
+function loadDependencies(projectPath: string = '.'): Dependencies | null {
+  const depsPath = resolve(projectPath, 'dependencies.json');
+  if (!existsSync(depsPath)) {
+    return null;
+  }
+  return JSON.parse(readFileSync(depsPath, 'utf-8')) as Dependencies;
+}
+
+// Flood-fill resolve all transitive dependencies
+function resolveFeatures(requested: string[], manifest: FeaturesManifest): string[] {
+  const resolved = new Set<string>();
+  const queue = [...requested];
+
+  while (queue.length > 0) {
+    const feature = queue.shift()!;
+    if (resolved.has(feature)) continue;
+
+    const featureDef = manifest.features[feature];
+    if (!featureDef) {
+      console.error(`Warning: Unknown feature '${feature}'`);
+      continue;
+    }
+
+    resolved.add(feature);
+
+    // Add required features to queue
+    if (featureDef.requires) {
+      for (const req of featureDef.requires) {
+        if (!resolved.has(req)) {
+          queue.push(req);
+        }
+      }
+    }
+  }
+
+  return Array.from(resolved);
+}
+
+// Merge features into package.json structure
+function buildPackageJson(deps: Dependencies, resolvedFeatures: string[], manifest: FeaturesManifest): PackageJson {
+  const pkg: PackageJson = {
+    $schema: 'https://json.schemastore.org/package',
+    name: deps.scope ? `${deps.scope}/${deps.name}` : deps.name,
+    version: deps.version ?? '0.0.0',
+  };
+
+  if (deps.description) pkg['description'] = deps.description;
+  if (deps.license) pkg['license'] = deps.license;
+  if (deps.author) pkg['author'] = deps.author;
+
+  // Collect from all resolved features
+  const devDependencies: Record<string, string> = {};
+  const peerDependencies: Record<string, string> = {};
+  const scripts: Record<string, string> = {};
+
+  // Process features in dependency order (most fundamental first)
+  // Reverse the resolved list since flood-fill adds dependencies after their dependents
+  const orderedFeatures = [...resolvedFeatures].reverse();
+
+  for (const featureName of orderedFeatures) {
+    const feature = manifest.features[featureName];
+    if (!feature) continue;
+
+    // Merge devDependencies
+    if (feature.devDependencies) {
+      Object.assign(devDependencies, feature.devDependencies);
+    }
+
+    // Merge peerDependencies
+    if (feature.peerDependencies) {
+      Object.assign(peerDependencies, feature.peerDependencies);
+    }
+
+    // Merge scripts (later features override earlier)
+    if (feature.scripts) {
+      Object.assign(scripts, feature.scripts);
+    }
+
+    // Merge packageFields
+    if (feature.packageFields) {
+      for (const [key, value] of Object.entries(feature.packageFields)) {
+        pkg[key] = value;
+      }
+    }
+  }
+
+  // Apply project-specific overrides from packageJson
+  if (deps.packageJson) {
+    for (const [key, value] of Object.entries(deps.packageJson)) {
+      if (key === 'scripts' && typeof value === 'object' && value !== null) {
+        Object.assign(scripts, value as Record<string, string>);
+      } else {
+        pkg[key] = value;
+      }
+    }
+  }
+
+  // Add collected dependencies and scripts
+  if (Object.keys(devDependencies).length > 0) {
+    pkg['devDependencies'] = sortObject(devDependencies);
+  }
+  if (Object.keys(peerDependencies).length > 0) {
+    pkg['peerDependencies'] = sortObject(peerDependencies);
+  }
+  if (Object.keys(scripts).length > 0) {
+    pkg['scripts'] = scripts;
+  }
+
+  return pkg;
+}
+
+// Sort object keys alphabetically
+function sortObject(obj: Record<string, string>): Record<string, string> {
+  const sorted: Record<string, string> = {};
+  for (const key of Object.keys(obj).sort()) {
+    sorted[key] = obj[key]!;
+  }
+  return sorted;
+}
+
+// Determine which tsconfig to use (highest-priority feature wins)
+function determineTsconfig(deps: Dependencies, resolvedFeatures: string[], manifest: FeaturesManifest): string | null {
+  // Explicit override
+  if (deps.tsconfig) {
+    return deps.tsconfig;
+  }
+
+  // Find the most specific tsconfig from resolved features
+  // Priority: react > frontend > esm.lib (later in the list = more specific)
+  let tsconfig: string | null = null;
+  for (const featureName of resolvedFeatures) {
+    const feature = manifest.features[featureName];
+    if (feature?.tsconfig) {
+      tsconfig = feature.tsconfig;
+    }
+  }
+
+  return tsconfig;
+}
+
+// Build .gitignore from resolved features
+function buildGitignore(resolvedFeatures: string[], manifest: FeaturesManifest): string {
+  const gitignoreDir = resolve(packageRoot, 'gitignore');
+  const modules = new Set<string>();
+
+  for (const featureName of resolvedFeatures) {
+    const feature = manifest.features[featureName];
+    if (feature?.gitignore) {
+      for (const mod of feature.gitignore) {
+        modules.add(mod);
+      }
+    }
+  }
+
+  let content = '';
+  for (const mod of modules) {
+    const modPath = resolve(gitignoreDir, mod);
+    if (existsSync(modPath)) {
+      content += readFileSync(modPath, 'utf-8');
+    }
+  }
+
+  return content;
+}
 
 // Utilities
 function usage(): void {
   console.log(`Usage: cue-config <command> [options]
 
 Commands:
-  init <name> [--config TYPE]   Initialize project with config.cue and tsconfig.json
-  generate [--merge]            Generate package.json from config.cue
-  set-tsconfig <TYPE>           Update tsconfig.json to extend a different config
-  validate                      Validate config.cue against schemas
+  init [--preset NAME]     Initialize dependencies.json from preset
+  generate                 Generate package.json, tsconfig.json, .gitignore from dependencies.json
+  validate                 Validate dependencies.json and generated configs
 
-Config types: ${CONFIG_TYPES.join(', ')}
+Presets: lib, react-lib, app
 
 Examples:
-  cue-config init my-lib                    # Initialize ESM library
-  cue-config init my-app --config frontend  # Initialize frontend app
-  cue-config generate                       # Generate package.json (overwrites)
-  cue-config generate --merge               # Merge with existing package.json
-  cue-config set-tsconfig cjs               # Switch to CommonJS config
-  cue-config validate                       # Check config.cue is valid
+  cue-config init                        # Initialize with default 'lib' preset
+  cue-config init --preset react-lib     # Initialize React library
+  cue-config generate                    # Generate all configs
+  cue-config validate                    # Check configs are valid
 `);
 }
 
@@ -66,10 +269,6 @@ function checkCue(): boolean {
     console.error('Install from: https://cuelang.org/docs/install/');
     return false;
   }
-}
-
-function isConfigType(value: string): value is ConfigType {
-  return CONFIG_TYPES.includes(value as ConfigType);
 }
 
 function parseArgs(args: string[], flagsWithValues: string[] = []): ParsedArgs {
@@ -92,28 +291,6 @@ function parseArgs(args: string[], flagsWithValues: string[] = []): ParsedArgs {
   return result;
 }
 
-function deepMerge(base: Record<string, unknown>, override: Record<string, unknown>): Record<string, unknown> {
-  const result: Record<string, unknown> = { ...base };
-  for (const key of Object.keys(override)) {
-    const overrideValue = override[key];
-    const baseValue = base[key];
-    if (
-      overrideValue &&
-      typeof overrideValue === 'object' &&
-      !Array.isArray(overrideValue) &&
-      baseValue &&
-      typeof baseValue === 'object' &&
-      !Array.isArray(baseValue)
-    ) {
-      result[key] = deepMerge(baseValue as Record<string, unknown>, overrideValue as Record<string, unknown>);
-    } else {
-      result[key] = overrideValue;
-    }
-  }
-  return result;
-}
-
-// CUE module setup
 function setupCueMod(): void {
   if (!existsSync('cue.mod')) {
     mkdirSync('cue.mod', { recursive: true });
@@ -141,114 +318,71 @@ language: {
       console.log('Note: Creating copy of CUE schemas (symlink failed)');
       mkdirSync(pkgDir, { recursive: true });
       execSync(`cp -r "${packageRoot}/ts" "${pkgDir}/"`, { stdio: 'ignore' });
-      execSync(`cp -r "${packageRoot}/cue.mod" "${pkgDir}/"`, { stdio: 'ignore' });
+      execSync(`cp -r "${packageRoot}/npm" "${pkgDir}/"`, { stdio: 'ignore' });
     }
   }
 }
 
 // Commands
 function init(args: string[]): void {
-  const parsed = parseArgs(args, ['config']);
-  const name = parsed._[0];
-  const configTypeArg = typeof parsed['config'] === 'string' ? parsed['config'] : 'esm';
+  const manifest = loadFeatures();
+  const parsed = parseArgs(args, ['preset']);
+  const presetName = typeof parsed['preset'] === 'string' ? parsed['preset'] : 'lib';
 
-  if (!isConfigType(configTypeArg)) {
-    console.error(`Invalid config type: ${configTypeArg}`);
-    console.error(`Valid types: ${CONFIG_TYPES.join(', ')}`);
+  const preset = manifest.defaults[presetName];
+  if (!preset) {
+    console.error(`Unknown preset: ${presetName}`);
+    console.error(`Available presets: ${Object.keys(manifest.defaults).join(', ')}`);
     process.exit(1);
   }
 
-  const configType: ConfigType = configTypeArg;
-
-  // Determine project name
-  let projectName = name;
-  if (!projectName) {
-    if (existsSync('package.json')) {
-      try {
-        const pkg = JSON.parse(readFileSync('package.json', 'utf-8')) as PackageJson;
-        projectName = pkg.name?.replace('@mark1russell7/', '') ?? '';
-      } catch {
-        // Ignore parse errors
-      }
-    }
-    if (!projectName) {
-      projectName = process.cwd().split(/[\\/]/).pop() ?? 'project';
+  // Determine project name from existing package.json or folder
+  let projectName = process.cwd().split(/[\\/]/).pop() ?? 'project';
+  if (existsSync('package.json')) {
+    try {
+      const pkg = JSON.parse(readFileSync('package.json', 'utf-8')) as PackageJson;
+      const name = pkg.name?.replace(/@[^/]+\//, '') ?? '';
+      if (name) projectName = name;
+    } catch {
+      // Ignore
     }
   }
 
-  const shortName = projectName.replace('@mark1russell7/', '');
-
-  // Create config.cue - inline values to avoid cross-package interpolation issues
-  const configCue = `package config
-
-import "mark1russell7.cue/npm/package"
-
-// Project configuration
-// Run: npx cue-config generate
-
-output: package.#PackageJson & {
-\t$schema:     "https://json.schemastore.org/package"
-\tname:        "@mark1russell7/${shortName}"
-\tversion:     "0.0.0"
-\tdescription: "Package description"
-\tlicense:     "MIT"
-\tauthor:      "Mark Russell <marktheprogrammer17@gmail.com>"
-\ttype:        "module"
-\tmain:        "./dist/index.js"
-\ttypes:       "./dist/index.d.ts"
-\texports: ".": {
-\t\ttypes:  "./dist/index.d.ts"
-\t\timport: "./dist/index.js"
-\t}
-\tfiles: ["dist", "src"]
-\tscripts: {
-\t\tbuild:     "tsc -b"
-\t\ttypecheck: "tsc --noEmit"
-\t\tclean:     "rm -rf dist .tsbuildinfo"
-\t}
-\tsideEffects: false
-\tdevDependencies: {
-\t\t"@mark1russell7/cue": "github:mark1russell7/cue#main"
-\t\ttypescript:          "^5.9.3"
-\t}
-\tkeywords: []
-\trepository: {
-\t\ttype: "git"
-\t\turl:  "https://github.com/mark1russell7/${shortName}.git"
-\t}
-\tbugs: url:     "https://github.com/mark1russell7/${shortName}/issues"
-\thomepage:      "https://github.com/mark1russell7/${shortName}#readme"
-\tpublishConfig: access: "public"
-\tengines: {
-\t\tnode: ">=25.0.0"
-\t\tnpm:  ">=11.0.0"
-\t}
-}
-`;
-
-  if (existsSync('config.cue') && !parsed['force']) {
-    console.log('config.cue already exists (use --force to overwrite)');
-  } else {
-    writeFileSync('config.cue', configCue);
-    console.log('Created config.cue');
-  }
-
-  // Create tsconfig.json
-  const tsconfig = {
-    $schema: 'https://json.schemastore.org/tsconfig',
-    extends: TSCONFIG_PATHS[configType],
+  const deps: Dependencies = {
+    $schema: './node_modules/@mark1russell7/cue/dependencies/schema.json',
+    name: projectName,
+    scope: '@mark1russell7',
+    version: '0.0.0',
+    description: 'Package description',
+    license: 'MIT',
+    author: 'Mark Russell <marktheprogrammer17@gmail.com>',
+    features: preset,
+    packageJson: {
+      keywords: [],
+      repository: {
+        type: 'git',
+        url: `https://github.com/mark1russell7/${projectName}.git`,
+      },
+      bugs: {
+        url: `https://github.com/mark1russell7/${projectName}/issues`,
+      },
+      homepage: `https://github.com/mark1russell7/${projectName}#readme`,
+      publishConfig: {
+        access: 'public',
+      },
+      engines: {
+        node: '>=25.0.0',
+        npm: '>=11.0.0',
+      },
+    },
   };
 
-  if (existsSync('tsconfig.json') && !parsed['force']) {
-    console.log('tsconfig.json already exists (use --force to overwrite)');
+  if (existsSync('dependencies.json') && !parsed['force']) {
+    console.log('dependencies.json already exists (use --force to overwrite)');
   } else {
-    writeFileSync('tsconfig.json', JSON.stringify(tsconfig, null, 2) + '\n');
-    console.log(`Created tsconfig.json (extends ${configType})`);
+    writeFileSync('dependencies.json', JSON.stringify(deps, null, 2) + '\n');
+    console.log('Created dependencies.json');
   }
-
-  // Setup CUE module
-  setupCueMod();
-  console.log('Created cue.mod/');
 
   // Create src/index.ts if missing
   if (!existsSync('src')) {
@@ -259,133 +393,109 @@ output: package.#PackageJson & {
     console.log('Created src/index.ts');
   }
 
-  // Compose .gitignore from modular parts
-  const gitignoreDir = resolve(packageRoot, 'gitignore');
-  const gitignoreModules = ['base', 'npm', 'typescript', 'cue'];
-  if (!existsSync('.gitignore') || parsed['force']) {
-    let gitignoreContent = '';
-    for (const mod of gitignoreModules) {
-      const modPath = resolve(gitignoreDir, mod);
-      if (existsSync(modPath)) {
-        gitignoreContent += readFileSync(modPath, 'utf-8');
-      }
-    }
-    if (gitignoreContent) {
-      writeFileSync('.gitignore', gitignoreContent);
-      console.log('Created .gitignore');
-    }
-  }
-
   console.log(`
 Next steps:
-  1. Edit config.cue to customize your package
+  1. Edit dependencies.json to customize your project
   2. Run: npx cue-config generate
   3. Run: npm install
 `);
 }
 
-function generate(args: string[]): void {
-  if (!checkCue()) process.exit(1);
+function generate(_args: string[]): void {
+  const manifest = loadFeatures();
+  const deps = loadDependencies();
 
-  const parsed = parseArgs(args, []);
-  const merge = parsed['merge'] === true;
-
-  if (!existsSync('config.cue')) {
-    console.error('No config.cue found. Run: npx cue-config init <name>');
+  if (!deps) {
+    console.error('No dependencies.json found. Run: npx cue-config init');
     process.exit(1);
   }
 
-  const result: SpawnSyncReturns<string> = spawnSync('cue', ['eval', 'config.cue', '-e', 'output', '--out', 'json'], {
-    stdio: ['inherit', 'pipe', 'pipe'],
-    encoding: 'utf-8',
-  });
+  // Resolve all transitive dependencies
+  const resolvedFeatures = resolveFeatures(deps.features, manifest);
+  console.log(`Resolved features: ${resolvedFeatures.join(', ')}`);
 
-  if (result.status !== 0) {
-    console.error('CUE evaluation failed:');
-    console.error(result.stderr);
-    process.exit(result.status ?? 1);
+  // Generate package.json
+  const packageJson = buildPackageJson(deps, resolvedFeatures, manifest);
+  writeFileSync('package.json', JSON.stringify(packageJson, null, 2) + '\n');
+  console.log('Generated package.json');
+
+  // Generate tsconfig.json
+  const tsconfigName = determineTsconfig(deps, resolvedFeatures, manifest);
+  if (tsconfigName) {
+    const tsconfigFile = TSCONFIG_FILES[tsconfigName] ?? `${tsconfigName}.json`;
+    const tsconfig = {
+      $schema: 'https://json.schemastore.org/tsconfig',
+      extends: `@mark1russell7/cue/ts/config/${tsconfigFile}`,
+    };
+    writeFileSync('tsconfig.json', JSON.stringify(tsconfig, null, 2) + '\n');
+    console.log(`Generated tsconfig.json (extends ${tsconfigName})`);
   }
 
-  let generated: Record<string, unknown>;
-  try {
-    generated = JSON.parse(result.stdout) as Record<string, unknown>;
-  } catch {
-    console.error('Failed to parse CUE output as JSON');
-    console.error(result.stdout);
-    process.exit(1);
+  // Generate .gitignore
+  const gitignoreContent = buildGitignore(resolvedFeatures, manifest);
+  if (gitignoreContent) {
+    writeFileSync('.gitignore', gitignoreContent);
+    console.log('Generated .gitignore');
   }
 
-  let output = generated;
-
-  // Merge with existing if requested
-  if (merge && existsSync('package.json')) {
-    try {
-      const existing = JSON.parse(readFileSync('package.json', 'utf-8')) as Record<string, unknown>;
-      output = deepMerge(generated, existing);
-      // Always use the name from CUE
-      output['name'] = generated['name'];
-    } catch (e) {
-      const message = e instanceof Error ? e.message : String(e);
-      console.error('Failed to read existing package.json:', message);
-    }
+  // Setup CUE module if cue feature is present
+  if (resolvedFeatures.includes('cue')) {
+    setupCueMod();
+    console.log('Setup cue.mod/');
   }
-
-  // Write or output
-  if (process.stdout.isTTY) {
-    writeFileSync('package.json', JSON.stringify(output, null, 2) + '\n');
-    console.log('Generated package.json');
-  } else {
-    console.log(JSON.stringify(output, null, 2));
-  }
-}
-
-function setTsconfig(args: string[]): void {
-  const configTypeArg = args[0];
-
-  if (!configTypeArg) {
-    console.error('Usage: cue-config set-tsconfig <TYPE>');
-    console.error(`Types: ${CONFIG_TYPES.join(', ')}`);
-    process.exit(1);
-  }
-
-  if (!isConfigType(configTypeArg)) {
-    console.error(`Invalid config type: ${configTypeArg}`);
-    console.error(`Valid types: ${CONFIG_TYPES.join(', ')}`);
-    process.exit(1);
-  }
-
-  const configType: ConfigType = configTypeArg;
-
-  let tsconfig: Record<string, unknown> = {};
-  if (existsSync('tsconfig.json')) {
-    try {
-      tsconfig = JSON.parse(readFileSync('tsconfig.json', 'utf-8')) as Record<string, unknown>;
-    } catch {
-      // Ignore parse errors, start fresh
-    }
-  }
-
-  tsconfig['$schema'] = 'https://json.schemastore.org/tsconfig';
-  tsconfig['extends'] = TSCONFIG_PATHS[configType];
-
-  writeFileSync('tsconfig.json', JSON.stringify(tsconfig, null, 2) + '\n');
-  console.log(`Updated tsconfig.json to extend ${configType}`);
 }
 
 function validate(): void {
-  if (!checkCue()) process.exit(1);
+  const deps = loadDependencies();
 
-  if (!existsSync('config.cue')) {
-    console.error('No config.cue found. Run: npx cue-config init <name>');
+  if (!deps) {
+    console.error('No dependencies.json found. Run: npx cue-config init');
     process.exit(1);
   }
 
-  const result = spawnSync('cue', ['vet', 'config.cue'], { stdio: 'inherit' });
+  const manifest = loadFeatures();
 
-  if (result.status === 0) {
-    console.log('Validation passed');
+  // Validate all requested features exist
+  for (const feature of deps.features) {
+    if (!manifest.features[feature]) {
+      console.error(`Error: Unknown feature '${feature}'`);
+      process.exit(1);
+    }
   }
-  process.exit(result.status ?? 1);
+
+  // Validate with CUE if available
+  if (checkCue()) {
+    const schemaPath = resolve(packageRoot, 'dependencies/schema.cue');
+    if (existsSync(schemaPath)) {
+      const result = spawnSync('cue', ['vet', '-d', '#Dependencies', schemaPath, 'dependencies.json'], {
+        stdio: 'inherit',
+      });
+      if (result.status !== 0) {
+        process.exit(result.status ?? 1);
+      }
+    }
+  }
+
+  console.log('Validation passed');
+}
+
+// Self-generate for dogfooding
+function selfGenerate(): void {
+  const manifest = loadFeatures();
+  const deps = loadDependencies(packageRoot);
+
+  if (!deps) {
+    console.error('No dependencies.json found in package root');
+    process.exit(1);
+  }
+
+  const resolvedFeatures = resolveFeatures(deps.features, manifest);
+  console.log(`Self-generate: resolved features: ${resolvedFeatures.join(', ')}`);
+
+  const packageJson = buildPackageJson(deps, resolvedFeatures, manifest);
+  const outputPath = resolve(packageRoot, 'package.json');
+  writeFileSync(outputPath, JSON.stringify(packageJson, null, 2) + '\n');
+  console.log(`Generated ${outputPath}`);
 }
 
 // Main
@@ -399,11 +509,11 @@ switch (command) {
   case 'generate':
     generate(args.slice(1));
     break;
-  case 'set-tsconfig':
-    setTsconfig(args.slice(1));
-    break;
   case 'validate':
     validate();
+    break;
+  case 'self-generate':
+    selfGenerate();
     break;
   case 'help':
   case '--help':

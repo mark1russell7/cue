@@ -115,11 +115,10 @@ import "strings"
 
 // Paths for extending base configs (npm package paths)
 #TsconfigPaths: {
-	esm:      "@mark1russell7/cue/ts/config/tsconfig/esm.lib.json"
-	cjs:      "@mark1russell7/cue/ts/config/tsconfig/commonjs.lib.json"
-	commonjs: "@mark1russell7/cue/ts/config/tsconfig/commonjs.lib.json"
-	frontend: "@mark1russell7/cue/ts/config/tsconfig/frontend.json"
-	browser:  "@mark1russell7/cue/ts/config/tsconfig/frontend.json"
+	"esm.lib":      "@mark1russell7/cue/ts/config/esm.lib.json"
+	"commonjs.lib": "@mark1russell7/cue/ts/config/commonjs.lib.json"
+	frontend:       "@mark1russell7/cue/ts/config/frontend.json"
+	react:          "@mark1russell7/cue/ts/config/react.json"
 }
 
 // Template for generating project tsconfig

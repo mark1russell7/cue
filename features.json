@@ -1,0 +1,94 @@
+{
+  "$schema": "https://json.schemastore.org/base",
+  "description": "Feature manifest - single source of truth for composable project setup",
+  "features": {
+    "git": {
+      "description": "Git version control",
+      "gitignore": ["base"]
+    },
+    "npm": {
+      "description": "npm package management",
+      "requires": ["git"],
+      "gitignore": ["npm"],
+      "generates": ["package.json"]
+    },
+    "ts": {
+      "description": "TypeScript",
+      "requires": ["npm"],
+      "gitignore": ["typescript"],
+      "tsconfig": "esm.lib",
+      "devDependencies": {
+        "typescript": "^5.9.3"
+      },
+      "scripts": {
+        "build": "tsc -b",
+        "typecheck": "tsc --noEmit",
+        "clean": "rm -rf dist .tsbuildinfo"
+      },
+      "packageFields": {
+        "type": "module",
+        "main": "./dist/index.js",
+        "types": "./dist/index.d.ts",
+        "exports": {
+          ".": {
+            "types": "./dist/index.d.ts",
+            "import": "./dist/index.js"
+          }
+        },
+        "files": ["dist", "src"],
+        "sideEffects": false
+      }
+    },
+    "react": {
+      "description": "React library",
+      "requires": ["ts"],
+      "tsconfig": "react",
+      "devDependencies": {
+        "@types/react": "^19.0.0"
+      },
+      "peerDependencies": {
+        "react": ">=18"
+      }
+    },
+    "node": {
+      "description": "Node.js runtime",
+      "requires": ["ts"],
+      "devDependencies": {
+        "@types/node": "^22.0.0"
+      }
+    },
+    "vite": {
+      "description": "Vite build tool",
+      "requires": ["ts"],
+      "tsconfig": "frontend",
+      "devDependencies": {
+        "vite": "^6.0.0"
+      },
+      "scripts": {
+        "dev": "vite",
+        "build": "vite build",
+        "preview": "vite preview"
+      }
+    },
+    "vite-react": {
+      "description": "Vite with React",
+      "requires": ["vite", "react"],
+      "devDependencies": {
+        "@vitejs/plugin-react": "^4.0.0"
+      }
+    },
+    "cue": {
+      "description": "CUE configuration",
+      "requires": ["npm"],
+      "gitignore": ["cue"],
+      "devDependencies": {
+        "@mark1russell7/cue": "github:mark1russell7/cue#main"
+      }
+    }
+  },
+  "defaults": {
+    "lib": ["ts", "cue"],
+    "react-lib": ["react", "cue"],
+    "app": ["vite-react", "cue"]
+  }
+}

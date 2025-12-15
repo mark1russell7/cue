@@ -1,26 +1,28 @@
 package package
 
-// TypeScript-specific package.json additions
+// TypeScript feature - shared parts only
+// Project-specific paths (main, types, files) set by project
 
-// TypeScript package extends base with ts-specific conventions
-#TypeScriptPackageJson: #PackageJson & {
-	type:  "module"
-	main:  =~"\\./dist/.+\\.js$" | *"./dist/index.js"
-	types: =~"\\./dist/.+\\.d\\.ts$" | *"./dist/index.d.ts"
-	exports: ".": {
-		types:  =~"\\.d\\.ts$"
-		import: =~"\\.js$"
-	}
-	files: [...string] | *["dist", "src"]
+_typescript: {
+	type: "module"
 	scripts: {
-		build:      string | *"tsc -b"
-		typecheck?: string | *"tsc --noEmit"
-		clean?:     string | *"rm -rf dist .tsbuildinfo"
-		...
+		build:     "tsc -b"
+		typecheck: "tsc --noEmit"
+		clean:     "rm -rf dist .tsbuildinfo"
 	}
-	sideEffects: bool | *false
+	sideEffects: false
 	devDependencies: {
-		typescript: #VersionRange
-		...
+		typescript: "^5.9.3"
 	}
+}
+
+// Standard TypeScript library defaults (for projects that want them)
+_typescriptLib: _typescript & {
+	main:  "./dist/index.js"
+	types: "./dist/index.d.ts"
+	exports: ".": {
+		types:  "./dist/index.d.ts"
+		import: "./dist/index.js"
+	}
+	files: ["dist", "src"]
 }

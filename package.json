@@ -1,53 +1,64 @@
 {
-    "$schema": "https://json.schemastore.org/package",
-    "name": "@mark1russell7/cue",
-    "version": "0.0.0",
-    "description": "Shared CUE schemas and templates for TypeScript project configuration",
-    "license": "MIT",
-    "author": "Mark Russell <marktheprogrammer17@gmail.com>",
-    "bin": {
-        "cue-config": "./dist/cli.js"
-    },
-    "bugs": {
-        "url": "https://github.com/mark1russell7/cue/issues"
-    },
-    "devDependencies": {
-        "@types/node": "^22.0.0",
-        "typescript": "^5.9.3"
-    },
-    "engines": {
-        "node": ">=25.0.0",
-        "npm": ">=11.0.0"
-    },
-    "files": [
-        "dist",
-        "cue.mod",
-        "ts",
-        "npm",
-        "gitignore"
-    ],
-    "homepage": "https://github.com/mark1russell7/cue#readme",
-    "keywords": [
-        "cue",
-        "typescript",
-        "config",
-        "schema",
-        "validation",
-        "gitignore"
-    ],
-    "main": "./dist/cli.js",
-    "publishConfig": {
-        "access": "public"
-    },
-    "repository": {
-        "type": "git",
-        "url": "https://github.com/mark1russell7/cue.git"
-    },
-    "scripts": {
-        "build": "tsc -b",
-        "generate:self": "cue eval ./npm/package/*.cue -e cuePackage --out json > package.json",
-        "prepare": "npm run build"
-    },
-    "type": "module",
-    "types": "./dist/cli.d.ts"
+  "$schema": "https://json.schemastore.org/package",
+  "name": "@mark1russell7/cue",
+  "version": "0.0.0",
+  "description": "Shared CUE schemas and templates for TypeScript project configuration",
+  "license": "MIT",
+  "author": "Mark Russell <marktheprogrammer17@gmail.com>",
+  "type": "module",
+  "main": "./dist/cli.js",
+  "types": "./dist/cli.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/cli.d.ts",
+      "import": "./dist/cli.js"
+    }
+  },
+  "files": [
+    "dist",
+    "cue.mod",
+    "ts",
+    "npm",
+    "gitignore",
+    "features.json",
+    "dependencies"
+  ],
+  "sideEffects": false,
+  "bin": {
+    "cue-config": "./dist/cli.js"
+  },
+  "keywords": [
+    "cue",
+    "typescript",
+    "config",
+    "schema",
+    "validation",
+    "gitignore"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mark1russell7/cue.git"
+  },
+  "bugs": {
+    "url": "https://github.com/mark1russell7/cue/issues"
+  },
+  "homepage": "https://github.com/mark1russell7/cue#readme",
+  "publishConfig": {
+    "access": "public"
+  },
+  "engines": {
+    "node": ">=25.0.0",
+    "npm": ">=11.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.9.3"
+  },
+  "scripts": {
+    "build": "tsc -b",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist .tsbuildinfo",
+    "generate:self": "node dist/cli.js self-generate",
+    "prepare": "npm run build"
+  }
 }
