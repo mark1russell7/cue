@@ -1,0 +1,5 @@
+package ignore
+
+vscode: [
+	".vscode/",
+]

@@ -1,8 +1,7 @@
-package package
+package config
 
-// React feature - partial to merge into package.json
-
-_react: {
+// React feature contribution
+react: {
 	devDependencies: {
 		"@types/react": "^19.0.0"
 	}

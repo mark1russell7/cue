@@ -1,8 +1,7 @@
-package package
+package config
 
-// CUE config feature - partial to merge into package.json
-
-_cue: {
+// CUE feature contribution
+cue: {
 	devDependencies: {
 		"@mark1russell7/cue": "github:mark1russell7/cue#main"
 	}

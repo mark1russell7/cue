@@ -1,8 +1,7 @@
-package package
+package config
 
-// Node.js feature - partial to merge into package.json
-
-_node: {
+// Node.js feature contribution
+node: {
 	devDependencies: {
 		"@types/node": "^22.0.0"
 	}

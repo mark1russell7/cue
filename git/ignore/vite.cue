@@ -1,0 +1,5 @@
+package ignore
+
+vite: [
+	".vite/",
+]

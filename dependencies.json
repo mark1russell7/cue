@@ -1,1 +1,4 @@
-["ts", "node"]
+{
+  "$schema": "./dependencies/schema.json",
+  "dependencies": ["ts", "node"]
+}

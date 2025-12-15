@@ -6,22 +6,22 @@
   "license": "MIT",
   "author": "Mark Russell <marktheprogrammer17@gmail.com>",
   "type": "module",
-  "main": "./dist/cli.js",
-  "types": "./dist/cli.d.ts",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "types": "./dist/cli.d.ts",
-      "import": "./dist/cli.js"
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
     }
   },
   "files": [
     "dist",
-    "cue.mod",
+    "src",
     "ts",
     "npm",
-    "gitignore",
-    "features.json",
-    "dependencies"
+    "git",
+    "dependencies",
+    "features.json"
   ],
   "sideEffects": false,
   "bin": {
@@ -51,8 +51,8 @@
     "npm": ">=11.0.0"
   },
   "devDependencies": {
-    "@types/node": "^22.0.0",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "@types/node": "^22.0.0"
   },
   "scripts": {
     "build": "tsc -b",

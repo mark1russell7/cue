@@ -1,8 +1,11 @@
 package dependencies
 
-// Dependencies.json schema - just a list of features
-// Project metadata comes from project.json or git/folder inference
+// Dependencies.json schema
+// User declares which features their project uses
 
 #FeatureName: "git" | "npm" | "ts" | "react" | "node" | "vite" | "vite-react" | "cue"
 
-#Dependencies: [...#FeatureName]
+#Dependencies: {
+	"$schema"?: string
+	dependencies: [...#FeatureName]
+}
