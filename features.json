@@ -1,5 +1,5 @@
 {
-  "$schema": "./features.schema.json",
+  "$schema": "./features/schema.json",
   "features": {
     "git": { "dependencies": [] },
     "npm": { "dependencies": ["git"] },

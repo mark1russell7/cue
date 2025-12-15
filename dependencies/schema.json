@@ -1,0 +1,28 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "dependencies.schema.json",
+  "title": "Dependencies Configuration",
+  "description": "User declares which features their project uses",
+  "type": "object",
+  "required": ["dependencies"],
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "JSON Schema reference"
+    },
+    "dependencies": {
+      "type": "array",
+      "description": "List of features the project uses",
+      "items": {
+        "$ref": "#/$defs/FeatureName"
+      }
+    }
+  },
+  "$defs": {
+    "FeatureName": {
+      "type": "string",
+      "enum": ["git", "npm", "ts", "react", "node", "vite", "vite-react", "cue"],
+      "description": "Available feature names"
+    }
+  }
+}

@@ -1,0 +1,54 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "features.schema.json",
+  "title": "Features Configuration",
+  "description": "Defines available features, their dependencies, and presets",
+  "type": "object",
+  "required": ["features", "presets"],
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "JSON Schema reference"
+    },
+    "features": {
+      "type": "object",
+      "description": "Map of feature names to their configurations",
+      "propertyNames": {
+        "$ref": "#/$defs/FeatureName"
+      },
+      "additionalProperties": {
+        "$ref": "#/$defs/Feature"
+      }
+    },
+    "presets": {
+      "type": "object",
+      "description": "Named presets that group multiple features",
+      "additionalProperties": {
+        "type": "array",
+        "items": {
+          "$ref": "#/$defs/FeatureName"
+        }
+      }
+    }
+  },
+  "$defs": {
+    "FeatureName": {
+      "type": "string",
+      "enum": ["git", "npm", "ts", "react", "node", "vite", "vite-react", "cue"],
+      "description": "Available feature names"
+    },
+    "Feature": {
+      "type": "object",
+      "required": ["dependencies"],
+      "properties": {
+        "dependencies": {
+          "type": "array",
+          "description": "List of features this feature depends on",
+          "items": {
+            "$ref": "#/$defs/FeatureName"
+          }
+        }
+      }
+    }
+  }
+}
