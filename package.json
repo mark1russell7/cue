@@ -12,7 +12,16 @@
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
-    }
+    },
+    "./ts/config/base.json": "./ts/config/base.json",
+    "./ts/config/esm.json": "./ts/config/esm.json",
+    "./ts/config/lib.json": "./ts/config/lib.json",
+    "./ts/config/ts.json": "./ts/config/ts.json",
+    "./ts/config/node.json": "./ts/config/node.json",
+    "./ts/config/vite.json": "./ts/config/vite.json",
+    "./ts/config/react.json": "./ts/config/react.json",
+    "./dependencies/*": "./dependencies/*",
+    "./features.json": "./features.json"
   },
   "files": [
     "dist",
