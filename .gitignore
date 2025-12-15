@@ -16,7 +16,6 @@ node_modules/
 npm-debug.log*
 package-lock.json.bak
 # Build outputs
-dist/
 *.tsbuildinfo
 # CUE module cache (regenerated on npm install)
 cue.mod/pkg/
