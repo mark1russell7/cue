@@ -1,119 +1,152 @@
 # @mark1russell7/cue
 
-Shared CUE schemas, TypeScript configs, and project templates.
+CUE-driven configuration generation for TypeScript projects. Define your features in `dependencies.json`, run `cue-config generate`, and get a complete project setup.
 
 ## Installation
 
 ```bash
+npm install --save-dev @mark1russell7/cue
+# or from GitHub
 npm install --save-dev github:mark1russell7/cue#main
 ```
+
+Requires [CUE](https://cuelang.org/docs/install/) to be installed.
 
 ## Quick Start
 
 ```bash
-# Initialize a new TypeScript project
-npx cue-config init my-lib
+# Initialize with default preset (lib)
+npx cue-config init
 
-# Generate package.json from config.cue
-npx cue-config generate > package.json
+# Or with a specific preset
+npx cue-config init --preset react-lib
+
+# Generate all config files
+npx cue-config generate
 
 # Install dependencies
 npm install
 ```
 
-## Commands
+## How It Works
 
-| Command | Description |
-|---------|-------------|
-| `cue-config init <name> [--config TYPE]` | Initialize project with config.cue, tsconfig.json, .gitignore |
-| `cue-config generate [--merge]` | Generate package.json from config.cue |
-| `cue-config set-tsconfig <TYPE>` | Update tsconfig.json to extend a different config |
-| `cue-config validate` | Validate config.cue against schemas |
+1. **dependencies.json** - Declares which features your project needs
+2. **features.json** - Defines the dependency graph between features (in the cue package)
+3. **CUE files** - Each feature contributes config via CUE unification
+4. **cue-config generate** - Shells out to `cue eval` and generates all configs
 
-### Config Types
+### dependencies.json
 
-| Type | Use Case |
-|------|----------|
-| `esm` | Node.js ESM packages (default) |
-| `cjs` | Node.js CommonJS packages |
-| `frontend` | Browser/React apps with bundler |
-
-## What Gets Created
-
-Running `cue-config init my-lib` creates:
-
-- **config.cue** - CUE configuration for package.json (edit to customize)
-- **tsconfig.json** - Extends from `@mark1russell7/cue/ts/config/tsconfig/esm.lib.json`
-- **cue.mod/** - CUE module setup (links to installed package)
-- **.gitignore** - Composed from modular gitignore templates
-- **src/index.ts** - Entry point (if missing)
-
-## Customizing config.cue
-
-Edit `config.cue` to customize your package:
-
-```cue
-package config
-
-import "mark1russell7.cue/npm/package"
-
-output: package.#PackageJson & {
-    $schema:     "https://json.schemastore.org/package"
-    name:        "@mark1russell7/my-lib"
-    version:     "0.0.0"
-    description: "My awesome library"  // <- customize
-    // ... other fields
-
-    dependencies: {
-        "lodash": "^4.17.21"  // <- add dependencies
-    }
+```json
+{
+  "$schema": "./node_modules/@mark1russell7/cue/dependencies/schema.json",
+  "dependencies": ["ts", "node", "cue"]
 }
 ```
 
-Then regenerate: `npx cue-config generate > package.json`
+### Available Features
+
+| Feature | Dependencies | Description |
+|---------|--------------|-------------|
+| `git` | - | Base gitignore patterns |
+| `npm` | git | Node.js package setup |
+| `ts` | npm | TypeScript configuration |
+| `node` | ts | Node.js specific (@types/node) |
+| `react` | ts | React types + peer dependencies |
+| `vite` | ts | Vite bundler setup |
+| `vite-react` | vite, react | Vite + React app |
+| `cue` | npm | CUE module setup |
+
+### Presets
+
+| Preset | Features | Use Case |
+|--------|----------|----------|
+| `lib` | ts, cue | TypeScript library |
+| `react-lib` | react, cue | React component library |
+| `app` | vite-react, cue | Vite + React application |
+
+## Commands
+
+```bash
+cue-config init [--preset NAME]   # Create dependencies.json (default: lib)
+cue-config add <feature>          # Add a feature
+cue-config remove <feature>       # Remove a feature
+cue-config generate               # Generate package.json, tsconfig.json, .gitignore
+cue-config validate               # Validate dependencies.json
+```
+
+## Generated Files
+
+### package.json
+
+Generated via CUE from `npm/package/*.cue`. Each feature contributes its config:
+
+- **ts.cue** - type: module, exports, build scripts, typescript devDep
+- **node.cue** - @types/node devDep
+- **react.cue** - @types/react devDep, react peerDep
+- **cue.cue** - @mark1russell7/cue devDep
+
+Existing values in package.json are preserved for name, version, description. Objects like devDependencies and scripts are merged.
+
+### tsconfig.json
+
+Extends a pre-built config based on your most specific feature:
+
+| Feature | Extends |
+|---------|---------|
+| `ts` | `@mark1russell7/cue/ts/config/ts.json` |
+| `node` | `@mark1russell7/cue/ts/config/node.json` |
+| `vite` | `@mark1russell7/cue/ts/config/vite.json` |
+| `react` | `@mark1russell7/cue/ts/config/react.json` |
+
+Priority: ts < node < vite < react (most specific wins)
+
+### .gitignore
+
+Generated via CUE from `git/ignore/*.cue`. Patterns are collected from each feature and concatenated.
 
 ## Project Structure
 
 ```
 @mark1russell7/cue/
-├── npm/package/
-│   ├── schema.cue        # Base package.json schema
-│   ├── ts.cue            # TypeScript-specific additions
-│   └── templates.cue     # Templates
-├── ts/config/tsconfig/
-│   ├── shared.json       # Hyper-strict base settings
-│   ├── esm.lib.json      # ESM library config
-│   ├── commonjs.lib.json # CommonJS library config
-│   └── frontend.json     # Browser/React config
-├── gitignore/
-│   ├── base              # OS, editors
-│   ├── npm               # node_modules
-│   ├── typescript        # dist, .tsbuildinfo
-│   ├── cue               # cue.mod/pkg
+├── features.json           # Feature dependency graph
+├── dependencies.json       # Self: ["ts", "node"]
+│
+├── git/ignore/             # .gitignore generation
+│   ├── base.cue            # Always included
+│   ├── npm.cue             # node_modules, etc.
+│   ├── ts.cue              # dist/, *.tsbuildinfo
 │   └── ...
-└── src/cli.ts            # CLI source
+│
+├── npm/package/            # package.json generation
+│   ├── base.cue            # Schema + base fields
+│   ├── ts.cue              # TypeScript config
+│   ├── node.cue            # Node.js types
+│   ├── react.cue           # React types + peer deps
+│   └── ...
+│
+├── ts/config/              # Pre-built tsconfigs
+│   ├── base.json           # Hyper-strict base settings
+│   ├── ts.json             # Default TypeScript lib
+│   ├── node.json           # Node.js specific
+│   ├── vite.json           # Vite/bundler config
+│   └── react.json          # React JSX config
+│
+├── dependencies/
+│   └── schema.cue          # Validates dependencies.json
+│
+└── src/cli.ts              # CLI source
 ```
-
-## Modular Gitignore
-
-The `.gitignore` is composed from modular parts in `gitignore/`:
-
-- **base** - OS files (.DS_Store, Thumbs.db), editor files
-- **npm** - node_modules, npm logs
-- **typescript** - dist/, *.tsbuildinfo
-- **cue** - cue.mod/pkg/ (regenerated on install)
-- **vscode** - .vscode/
-- **env** - .env files
 
 ## Requirements
 
 - Node.js >= 25.0.0
 - npm >= 11.0.0
-- [CUE](https://cuelang.org/docs/install/) (for config generation)
+- [CUE](https://cuelang.org/docs/install/)
 
 ## Dogfooding
 
-This package uses itself - `package.json` is generated from CUE:
+This package generates its own config:
 
 ```bash
 npm run generate:self
