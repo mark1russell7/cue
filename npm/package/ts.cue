@@ -12,7 +12,7 @@ ts: {
 	files: ["dist", "src"]
 	sideEffects: false
 	scripts: {
-		build: "tsc -b"
+		build: string | *"tsc -b"  // Default can be overridden by vite
 		typecheck: "tsc --noEmit"
 		clean: "rm -rf dist .tsbuildinfo"
 	}
