@@ -3,7 +3,6 @@
   "extends": "./base.json",
   "compilerOptions": {
     "module": "commonjs",
-    "moduleResolution": "node",
-    "verbatimModuleSyntax": false
+    "moduleResolution": "node"
   }
 }
