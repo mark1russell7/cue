@@ -6,6 +6,7 @@
     "ts": { "dependencies": ["npm"] },
     "react": { "dependencies": ["ts"] },
     "node": { "dependencies": ["ts"] },
+    "node-cjs": { "dependencies": ["ts"] },
     "vite": { "dependencies": ["ts"] },
     "vite-react": { "dependencies": ["vite", "react"] },
     "cue": { "dependencies": ["npm"] }

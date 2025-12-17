@@ -37,7 +37,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const packageRoot = resolve(__dirname, '..');
 
 // Tsconfig priority: later features override earlier (most specific wins)
-const TSCONFIG_PRIORITY = ['ts', 'node', 'vite', 'react'];
+const TSCONFIG_PRIORITY = ['ts', 'node', 'node-cjs', 'vite', 'react'];
 
 // ============================================================================
 // Core Functions
@@ -248,7 +248,7 @@ Commands:
   validate                 Validate dependencies.json
 
 Presets: lib, react-lib, app
-Features: git, npm, ts, node, react, vite, vite-react, cue
+Features: git, npm, ts, node, node-cjs, react, vite, vite-react, cue
 
 Examples:
   cue-config init                        # Initialize with default 'lib' preset
