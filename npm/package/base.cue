@@ -33,6 +33,21 @@ import "strings"
 	publishConfig?: _
 	engines?: _
 	bin?: [string]: string
+	pnpm?: #PnpmConfig
+	...
+}
+
+// Pnpm configuration
+#PnpmConfig: {
+	// Packages allowed to run install scripts (required for GitHub deps that need build)
+	onlyBuiltDependencies?: [...string]
+	// Override specific package versions
+	overrides?: [string]: string
+	// Peer dependency settings
+	peerDependencyRules?: {
+		ignoreMissing?: [...string]
+		allowAny?: [...string]
+	}
 	...
 }
 
