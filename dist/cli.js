@@ -194,6 +194,8 @@ Commands:
   remove <feature>         Remove a feature from dependencies.json
   generate                 Generate package.json, tsconfig.json, .gitignore
   validate                 Validate dependencies.json
+  validate-manifest        Validate ecosystem.manifest.json against schema
+  validate-structure       Validate project folder structure
 
 Presets: lib, react-lib, app
 Features: git, npm, ts, node, node-cjs, react, vite, vite-react, cue
@@ -204,6 +206,8 @@ Examples:
   cue-config add node                    # Add node feature
   cue-config remove vite                 # Remove vite feature
   cue-config generate                    # Generate all configs
+  cue-config validate-manifest           # Validate ecosystem manifest
+  cue-config validate-structure          # Validate project structure
 `);
 }
 function parseArgs(args, flagsWithValues = []) {
@@ -388,6 +392,116 @@ language: {
         }
     }
 }
+// Validate ecosystem manifest against CUE schema
+function validateManifest(args) {
+    if (!checkCue())
+        process.exit(1);
+    const parsed = parseArgs(args, ['path']);
+    const manifestPath = typeof parsed['path'] === 'string'
+        ? resolve(parsed['path'])
+        : resolve(process.cwd(), 'ecosystem.manifest.json');
+    if (!existsSync(manifestPath)) {
+        console.error(`Manifest not found: ${manifestPath}`);
+        process.exit(1);
+    }
+    const schemaPath = resolve(packageRoot, 'ecosystem/schema.cue');
+    if (!existsSync(schemaPath)) {
+        console.error('Ecosystem schema not found in package');
+        process.exit(1);
+    }
+    console.log(`Validating: ${manifestPath}`);
+    const result = spawnSync('cue', ['vet', '-d', '#EcosystemManifest', schemaPath, manifestPath], {
+        stdio: 'inherit',
+    });
+    if (result.status !== 0) {
+        console.error('Manifest validation failed');
+        process.exit(result.status ?? 1);
+    }
+    console.log('Manifest validation passed');
+}
+// Find and load ecosystem manifest
+function loadEcosystemManifest() {
+    // Try common locations
+    const homeDir = process.env['HOME'] ?? process.env['USERPROFILE'] ?? '';
+    const locations = [
+        resolve(homeDir, 'git', 'ecosystem', 'ecosystem.manifest.json'),
+        resolve(process.cwd(), '..', 'ecosystem', 'ecosystem.manifest.json'),
+        resolve(process.cwd(), 'ecosystem.manifest.json'),
+    ];
+    for (const loc of locations) {
+        if (existsSync(loc)) {
+            try {
+                return JSON.parse(readFileSync(loc, 'utf-8'));
+            }
+            catch {
+                continue;
+            }
+        }
+    }
+    return null;
+}
+// Validate project folder structure (reads template from ecosystem manifest)
+function validateStructure(args) {
+    const parsed = parseArgs(args, ['path']);
+    const projectPath = typeof parsed['path'] === 'string'
+        ? resolve(parsed['path'])
+        : process.cwd();
+    console.log(`Validating project structure: ${projectPath}`);
+    // Load template from ecosystem manifest (single source of truth)
+    const manifest = loadEcosystemManifest();
+    let requiredFiles;
+    let requiredDirs;
+    if (manifest?.projectTemplate) {
+        requiredFiles = manifest.projectTemplate.files;
+        requiredDirs = manifest.projectTemplate.dirs;
+        console.log('Using projectTemplate from ecosystem.manifest.json');
+    }
+    else {
+        // Fallback defaults (should rarely be used)
+        console.log('Warning: ecosystem.manifest.json not found, using defaults');
+        requiredFiles = ['package.json', 'tsconfig.json', 'dependencies.json', '.gitignore'];
+        requiredDirs = ['src'];
+    }
+    const errors = [];
+    const warnings = [];
+    // Check required files
+    for (const file of requiredFiles) {
+        const filePath = resolve(projectPath, file);
+        if (!existsSync(filePath)) {
+            errors.push(`Missing required file: ${file}`);
+        }
+    }
+    // Check required directories
+    for (const dir of requiredDirs) {
+        // Skip 'dist' as required - it's created on build
+        if (dir === 'dist') {
+            const dirPath = resolve(projectPath, dir);
+            if (!existsSync(dirPath)) {
+                warnings.push('dist/ not found (run build first)');
+            }
+            continue;
+        }
+        const dirPath = resolve(projectPath, dir);
+        if (!existsSync(dirPath)) {
+            errors.push(`Missing required directory: ${dir}/`);
+        }
+    }
+    // Print results
+    if (warnings.length > 0) {
+        console.log('\nWarnings:');
+        for (const w of warnings) {
+            console.log(`  - ${w}`);
+        }
+    }
+    if (errors.length > 0) {
+        console.log('\nErrors:');
+        for (const e of errors) {
+            console.log(`  - ${e}`);
+        }
+        process.exit(1);
+    }
+    console.log('Structure validation passed');
+}
 // Self-generate for dogfooding
 function selfGenerate() {
     if (!checkCue())
@@ -426,6 +540,12 @@ switch (command) {
         break;
     case 'validate':
         validate();
+        break;
+    case 'validate-manifest':
+        validateManifest(args.slice(1));
+        break;
+    case 'validate-structure':
+        validateStructure(args.slice(1));
         break;
     case 'self-generate':
         selfGenerate();
