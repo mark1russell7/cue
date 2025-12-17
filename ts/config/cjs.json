@@ -3,6 +3,6 @@
   "extends": "./base.json",
   "compilerOptions": {
     "module": "commonjs",
-    "moduleResolution": "nodenext"
+    "moduleResolution": "node16"
   }
 }
