@@ -9,11 +9,12 @@
     "node-cjs": { "dependencies": ["ts"] },
     "vite": { "dependencies": ["ts"] },
     "vite-react": { "dependencies": ["vite", "react"] },
-    "cue": { "dependencies": ["npm"] }
+    "cue": { "dependencies": ["npm"] },
+    "vitest": { "dependencies": ["ts"] }
   },
   "presets": {
-    "lib": ["ts", "cue"],
-    "react-lib": ["react", "cue"],
-    "app": ["vite-react", "cue"]
+    "lib": ["ts", "cue", "vitest"],
+    "react-lib": ["react", "cue", "vitest"],
+    "app": ["vite-react", "cue", "vitest"]
   }
 }
