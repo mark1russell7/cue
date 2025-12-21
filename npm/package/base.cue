@@ -59,5 +59,20 @@ cue: {} | *{}
 vite: {} | *{}
 viteReact: {} | *{}
 
-// Final output: merge all contributions
-output: #PackageJson & ts & node & react & cue & vite & viteReact
+// Collect all @mark1russell7/* dependencies for onlyBuiltDependencies
+_allDeps: {
+	for name, _ in output.dependencies if strings.HasPrefix(name, "@mark1russell7/") {
+		(name): true
+	}
+	for name, _ in output.devDependencies if strings.HasPrefix(name, "@mark1russell7/") {
+		(name): true
+	}
+}
+_mark1russell7DepsList: [ for name, _ in _allDeps {name}]
+
+// Final output: merge all contributions + auto-populate onlyBuiltDependencies
+output: #PackageJson & ts & node & react & cue & vite & viteReact & {
+	if len(_mark1russell7DepsList) > 0 {
+		pnpm: onlyBuiltDependencies: _mark1russell7DepsList
+	}
+}
