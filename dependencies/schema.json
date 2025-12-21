@@ -21,7 +21,7 @@
   "$defs": {
     "FeatureName": {
       "type": "string",
-      "enum": ["git", "npm", "ts", "react", "node", "vite", "vite-react", "cue"],
+      "enum": ["git", "npm", "ts", "react", "node", "node-cjs", "vite", "vite-react", "cue"],
       "description": "Available feature names"
     }
   }
