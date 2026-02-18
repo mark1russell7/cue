@@ -8,7 +8,6 @@
     "declarationMap": true,
     "removeComments": false,
     "importHelpers": true,
-    "downlevelIteration": true,
     "sourceMap": true,
 
     "esModuleInterop": true,
