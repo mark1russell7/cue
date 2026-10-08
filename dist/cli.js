@@ -135,8 +135,14 @@ function generatePackageJson(resolvedFeatures, existingPkg, _projectPath = '.') 
             }
             pkg[key] = merged;
         }
+        else if (key === 'exports' || key === 'main' || key === 'types' || key === 'bin' || key === 'sideEffects') {
+            // The package owns its entry points: the generated value is only a default.
+            // (A generated "exports" with only "." used to replace a package's other entry points.)
+            if (pkg[key] === undefined)
+                pkg[key] = value;
+        }
         else {
-            // Generated values take precedence for other fields
+            // Generated values take precedence for other fields (for example, engines)
             pkg[key] = value;
         }
     }
