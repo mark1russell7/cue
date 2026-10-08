@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { execSync, spawnSync } from 'node:child_process';
-import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync, mkdirSync, symlinkSync, cpSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 // Constants
@@ -383,18 +383,15 @@ language: {
     if (!existsSync(pkgDir)) {
         mkdirSync(dirname(pkgDir), { recursive: true });
         try {
-            if (process.platform === 'win32') {
-                execSync(`mklink /J "${pkgDir}" "${packageRoot}"`, { stdio: 'ignore', shell: 'cmd.exe' });
-            }
-            else {
-                execSync(`ln -s "${packageRoot}" "${pkgDir}"`, { stdio: 'ignore' });
-            }
+            // A junction on Windows (no admin rights needed), a symbolic link elsewhere
+            symlinkSync(packageRoot, pkgDir, process.platform === 'win32' ? 'junction' : 'dir');
         }
         catch {
+            // Fall back to a copy. fs.cpSync instead of 'cp -r', which a Windows shell does not have.
             mkdirSync(pkgDir, { recursive: true });
-            execSync(`cp -r "${packageRoot}/ts" "${pkgDir}/"`, { stdio: 'ignore' });
-            execSync(`cp -r "${packageRoot}/npm" "${pkgDir}/"`, { stdio: 'ignore' });
-            execSync(`cp -r "${packageRoot}/git" "${pkgDir}/"`, { stdio: 'ignore' });
+            for (const dir of ['ts', 'npm', 'git']) {
+                cpSync(resolve(packageRoot, dir), resolve(pkgDir, dir), { recursive: true });
+            }
         }
     }
 }
