@@ -2,9 +2,9 @@
   "$schema": "https://json.schemastore.org/package",
   "name": "@mark1russell7/cue",
   "version": "1.0.0",
-  "description": "Shared CUE schemas and templates for TypeScript project configuration",
+  "description": "cue-config: generate package.json, tsconfig.json and .gitignore for TypeScript projects from composable feature presets (ts, node, react, vite, vitest), validated by CUE schemas. Includes shared tsconfig presets.",
   "license": "MIT",
-  "author": "Mark Russell <marktheprogrammer17@gmail.com>",
+  "author": "Mark Russell (https://github.com/mark1russell7)",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -23,7 +23,8 @@
     "./ts/config/vite.json": "./ts/config/vite.json",
     "./ts/config/react.json": "./ts/config/react.json",
     "./dependencies/*": "./dependencies/*",
-    "./features.json": "./features.json"
+    "./features.json": "./features.json",
+    "./package.json": "./package.json"
   },
   "files": [
     "dist",
@@ -32,7 +33,17 @@
     "npm",
     "git",
     "dependencies",
-    "features.json"
+    "features",
+    "features.json",
+    "client",
+    "docker",
+    "ecosystem",
+    "project",
+    "splay",
+    "cue.mod/module.cue",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE"
   ],
   "sideEffects": false,
   "bin": {
@@ -40,26 +51,38 @@
   },
   "keywords": [
     "cue",
+    "cuelang",
     "typescript",
+    "tsconfig",
+    "package-json",
+    "gitignore",
     "config",
+    "configuration",
+    "generator",
+    "scaffolding",
+    "presets",
+    "monorepo",
     "schema",
     "validation",
-    "gitignore"
+    "vite",
+    "vitest",
+    "react",
+    "cli"
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/mark1russell7/cue.git"
+    "url": "git+https://github.com/mark1russell7/cue.git"
   },
   "bugs": {
     "url": "https://github.com/mark1russell7/cue/issues"
   },
   "homepage": "https://github.com/mark1russell7/cue#readme",
   "publishConfig": {
-    "access": "public"
+    "access": "public",
+    "provenance": true
   },
   "engines": {
-    "node": ">=25.0.0",
-    "npm": ">=11.0.0"
+    "node": ">=22"
   },
   "devDependencies": {
     "typescript": "^5.9.3",

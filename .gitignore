@@ -19,3 +19,6 @@ package-lock.json.bak
 *.tsbuildinfo
 # CUE module cache (regenerated on npm install)
 cue.mod/pkg/
+
+# npm pack output
+*.tgz

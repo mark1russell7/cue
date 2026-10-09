@@ -1,9 +1,29 @@
 # @mark1russell7/cue
 
 [![npm version](https://img.shields.io/npm/v/@mark1russell7/cue.svg)](https://www.npmjs.com/package/@mark1russell7/cue)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![License: MIT](https://img.shields.io/npm/l/@mark1russell7/cue.svg)](./LICENSE)
+[![Part of client](https://img.shields.io/badge/part%20of-client-1f3fbf)](https://mark1russell7.github.io/client/)
 
-> Shared CUE schemas and templates for TypeScript project configuration
+> Generate `package.json`, `tsconfig.json` and `.gitignore` from a list of features, validated by CUE.
+
+`cue-config` keeps the configuration of many TypeScript packages the same. Each package lists its features (`ts`, `node`, `react`, `vite`, `vitest`) in `dependencies.json`. The CLI resolves what the features need and writes the files. The [client monorepo](https://github.com/mark1russell7/client) uses it for its 30 packages (see [the client site](https://mark1russell7.github.io/client/)).
+
+## Quick start
+
+```bash
+npm install --save-dev @mark1russell7/cue   # also install the CUE CLI: https://cuelang.org/docs/install/
+npx cue-config init --preset lib            # writes dependencies.json: ts, cue, vitest
+npx cue-config generate                     # writes package.json, tsconfig.json and .gitignore
+```
+
+From code:
+
+```typescript
+import { presetFeatures, tsconfigPresetPath } from "@mark1russell7/cue";
+
+console.log(presetFeatures("lib"));    // ["ts", "cue", "vitest", "npm", "git"]
+console.log(tsconfigPresetPath("node")); // .../node_modules/@mark1russell7/cue/ts/config/node.json
+```
 
 ## Overview
 
@@ -63,8 +83,7 @@ npm install --save-dev @mark1russell7/cue
 
 ### Prerequisites
 
-- Node.js >= 25.0.0
-- npm >= 11.0.0
+- Node.js 22 or later
 - [CUE CLI](https://cuelang.org/docs/install/) installed and available in PATH
 
 ## Configuration Flow
@@ -512,32 +531,18 @@ myPackage: package.#Package & {
 
 ### Programmatic Usage
 
-While primarily a CLI tool, you can use the internal functions programmatically:
+The package root exports the feature data that the CLI uses:
 
 ```typescript
-import { readFileSync, writeFileSync } from "node:fs";
+import { readFeatures, resolveFeatures, presetFeatures, tsconfigPresets, tsconfigPresetPath, packageRoot } from "@mark1russell7/cue";
 
-// Load features
-const features = JSON.parse(readFileSync("features.json", "utf-8"));
-
-// Resolve dependencies manually
-const requested = ["react", "vitest"];
-const resolved = new Set();
-const queue = [...requested];
-
-while (queue.length > 0) {
-  const feature = queue.shift()!;
-  if (resolved.has(feature)) continue;
-
-  const featureDef = features.features[feature];
-  if (featureDef) {
-    resolved.add(feature);
-    queue.push(...featureDef.dependencies);
-  }
-}
-
-console.log([...resolved]);
+const manifest = readFeatures();                     // the content of features.json
+console.log(resolveFeatures(["react", "vitest"], manifest));
 // ["react", "vitest", "ts", "npm", "git"]
+console.log(presetFeatures("app"));                  // the features of the "app" preset, resolved
+console.log(tsconfigPresets);                        // ["base", "esm", "cjs", "lib", "ts", "node", ...]
+console.log(tsconfigPresetPath("react"));            // the absolute path of ts/config/react.json
+console.log(packageRoot);                            // the folder of the installed package
 ```
 
 ## Development
