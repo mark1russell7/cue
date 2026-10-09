@@ -58,21 +58,11 @@ react: {} | *{}
 cue: {} | *{}
 vite: {} | *{}
 viteReact: {} | *{}
+vitest: {} | *{}
 
-// Collect all @mark1russell7/* dependencies for onlyBuiltDependencies
-_allDeps: {
-	for name, _ in output.dependencies if strings.HasPrefix(name, "@mark1russell7/") {
-		(name): true
-	}
-	for name, _ in output.devDependencies if strings.HasPrefix(name, "@mark1russell7/") {
-		(name): true
-	}
-}
-_mark1russell7DepsList: [ for name, _ in _allDeps {name}]
+// Build approval is not generated here: it belongs in "allowBuilds" in pnpm-workspace.yaml (pnpm 11
+// and later). The old auto-population of "pnpm.onlyBuiltDependencies" referred to "output" from
+// inside "output", so it never emitted a value (M27).
 
-// Final output: merge all contributions + auto-populate onlyBuiltDependencies
-output: #PackageJson & ts & node & react & cue & vite & viteReact & {
-	if len(_mark1russell7DepsList) > 0 {
-		pnpm: onlyBuiltDependencies: _mark1russell7DepsList
-	}
-}
+// Final output: merge all contributions
+output: #PackageJson & ts & node & react & cue & vite & viteReact & vitest
