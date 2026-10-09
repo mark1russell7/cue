@@ -204,7 +204,7 @@ Commands:
   validate-structure       Validate project folder structure
 
 Presets: lib, react-lib, app
-Features: git, npm, ts, node, node-cjs, react, vite, vite-react, cue
+Features: git, npm, ts, node, node-cjs, react, vite, vite-react, cue, vitest
 
 Examples:
   cue-config init                        # Initialize with default 'lib' preset
