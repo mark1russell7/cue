@@ -3,6 +3,7 @@ import { execSync, spawnSync } from 'node:child_process';
 import { existsSync, readFileSync, writeFileSync, mkdirSync, symlinkSync, cpSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { readFeatures, resolveFeatures as resolveManifestFeatures } from './features.js';
 // Constants
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const packageRoot = resolve(__dirname, '..');
@@ -12,12 +13,11 @@ const TSCONFIG_PRIORITY = ['ts', 'node', 'node-cjs', 'vite', 'react'];
 // Core Functions
 // ============================================================================
 function loadFeatures() {
-    const featuresPath = resolve(packageRoot, 'features.json');
-    if (!existsSync(featuresPath)) {
+    if (!existsSync(resolve(packageRoot, 'features.json'))) {
         console.error('Error: features.json not found in package');
         process.exit(1);
     }
-    return JSON.parse(readFileSync(featuresPath, 'utf-8'));
+    return readFeatures();
 }
 function loadDependencies(projectPath = '.') {
     const depsPath = resolve(projectPath, 'dependencies.json');
@@ -50,25 +50,9 @@ function loadPackageJson(projectPath = '.') {
 }
 // Flood-fill resolve all transitive dependencies
 function resolveFeatures(requested, manifest) {
-    const resolved = new Set();
-    const queue = [...requested];
-    while (queue.length > 0) {
-        const feature = queue.shift();
-        if (resolved.has(feature))
-            continue;
-        const featureDef = manifest.features[feature];
-        if (!featureDef) {
-            console.error(`Warning: Unknown feature '${feature}'`);
-            continue;
-        }
-        resolved.add(feature);
-        for (const dep of featureDef.dependencies) {
-            if (!resolved.has(dep)) {
-                queue.push(dep);
-            }
-        }
-    }
-    return Array.from(resolved);
+    return resolveManifestFeatures(requested, manifest, (feature) => {
+        console.error(`Warning: Unknown feature '${feature}'`);
+    });
 }
 // Map feature name to CUE file field name (handle vite-react -> viteReact)
 function featureToFieldName(feature) {
