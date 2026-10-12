@@ -47,7 +47,7 @@
   ],
   "sideEffects": false,
   "bin": {
-    "cue-config": "./dist/cli.js"
+    "cue-config": "dist/cli.js"
   },
   "keywords": [
     "cue",
