@@ -36,12 +36,12 @@ package client
 _example: #ClientRegistry & {
 	schemaVersion: 1
 	packages: {
-		"@mark1russell7/client-logger": {
+		"@procedures/shell": {
 			proceduresPath: "./dist/register.js"
 			registeredAt:   "2025-12-17T02:49:14.458Z"
 			version:        "1.0.0"
 		}
-		"@mark1russell7/client-cli": {
+		"@procedures/cli-run": {
 			proceduresPath: "./dist/register.js"
 			registeredAt:   "2025-12-17T03:00:00.000Z"
 		}
