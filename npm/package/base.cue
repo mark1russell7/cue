@@ -64,5 +64,9 @@ vitest: {} | *{}
 // and later). The old auto-population of "pnpm.onlyBuiltDependencies" referred to "output" from
 // inside "output", so it never emitted a value (M27).
 
+// One engines policy for every package (P5): the lowest Node version that the workspace supports.
+// A generated value replaces the engines of a package.
+_engines: node: ">=22"
+
 // Final output: merge all contributions
-output: #PackageJson & ts & node & react & cue & vite & viteReact & vitest
+output: #PackageJson & ts & node & react & cue & vite & viteReact & vitest & {engines: _engines}

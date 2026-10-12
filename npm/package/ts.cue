@@ -17,6 +17,6 @@ ts: {
 		clean: "rm -rf dist .tsbuildinfo"
 	}
 	devDependencies: {
-		typescript: "^5.9.3"
+		typescript: "^7.0.2"
 	}
 }
