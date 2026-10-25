@@ -2,7 +2,7 @@ package config
 
 // TypeScript feature contribution
 ts: {
-	type: "module"
+	type: *"module" | "commonjs" // node-cjs sets "commonjs"
 	main: "./dist/index.js"
 	types: "./dist/index.d.ts"
 	exports: ".": {

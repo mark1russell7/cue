@@ -1,5 +1,14 @@
 # Change history
 
+## 1.0.1
+
+### Corrections
+
+- The `node-cjs` feature makes a CommonJS package. Before, the `ts` feature always set `"type": "module"`, so `tsc` (module `NodeNext`) emitted ES modules. The new file `npm/package/nodeCjs.cue` sets `"type": "commonjs"` and adds a `require` condition to `exports["."]`.
+- `generate` keeps the `type` of an existing `package.json`, as it keeps the entry points. Before, the generated `type` replaced it. Thus `generate` does not change the `type` of a package that has one.
+- `generate` makes the link `cue.mod/pkg/mark1russell7.cue` again when it goes to a different folder or to a folder that does not exist. Under pnpm, the path of the package changes with each version. Before, a stale link stopped `generate` with an error, after it wrote `package.json`, `tsconfig.json` and `.gitignore`.
+- `pnpm test` starts the tests of the merge, of the link and of the CUE files of the features (`test/`). The CUE tests need the `cue` CLI.
+
 ## 1.0.0
 
 The first version on npm. Before, projects installed the package from GitHub (`github:mark1russell7/cue`).

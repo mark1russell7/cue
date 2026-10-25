@@ -1,22 +1,16 @@
 #!/usr/bin/env node
 
 import { execSync, spawnSync } from 'node:child_process';
-import { existsSync, readFileSync, writeFileSync, mkdirSync, symlinkSync, cpSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { readFeatures, resolveFeatures as resolveManifestFeatures, type FeaturesManifest } from './features.js';
+import { linkCuePackage, mergePackageJson, type PackageJson } from './generate.js';
 
 // Types
 interface DependenciesJson {
   $schema?: string;
   dependencies: string[];
-}
-
-interface PackageJson {
-  $schema?: string;
-  name?: string;
-  version?: string;
-  [key: string]: unknown;
 }
 
 interface ParsedArgs {
@@ -82,9 +76,10 @@ function resolveFeatures(requested: string[], manifest: FeaturesManifest): strin
   });
 }
 
-// Map feature name to CUE file field name (handle vite-react -> viteReact)
+// Map feature name to CUE file field name (handle vite-react -> viteReact, node-cjs -> nodeCjs)
 function featureToFieldName(feature: string): string {
   if (feature === 'vite-react') return 'viteReact';
+  if (feature === 'node-cjs') return 'nodeCjs';
   return feature;
 }
 
@@ -132,40 +127,7 @@ function generatePackageJson(resolvedFeatures: string[], existingPkg: PackageJso
   const generated = JSON.parse(result.stdout) as PackageJson;
 
   // Merge with existing package.json
-  const pkg: PackageJson = { ...existingPkg };
-
-  // Apply generated values (existing values take precedence for some fields)
-  for (const [key, value] of Object.entries(generated)) {
-    if (key === 'name' || key === 'version' || key === 'description') {
-      // Keep existing if present
-      if (!pkg[key]) pkg[key] = value as string;
-    } else if (key === 'devDependencies' || key === 'peerDependencies' || key === 'scripts') {
-      // Merge objects
-      pkg[key] = { ...(value as Record<string, unknown>), ...(pkg[key] as Record<string, unknown> ?? {}) };
-    } else if (key === 'files' && Array.isArray(value) && Array.isArray(pkg[key])) {
-      // Merge arrays (deduplicated, generated first then existing)
-      const merged = [...(value as string[])];
-      for (const item of pkg[key] as string[]) {
-        if (!merged.includes(item)) merged.push(item);
-      }
-      pkg[key] = merged;
-    } else if (key === 'exports' || key === 'main' || key === 'types' || key === 'bin' || key === 'sideEffects') {
-      // The package owns its entry points: the generated value is only a default.
-      // (A generated "exports" with only "." used to replace a package's other entry points.)
-      if (pkg[key] === undefined) pkg[key] = value;
-    } else {
-      // Generated values take precedence for other fields (for example, engines)
-      pkg[key] = value;
-    }
-  }
-
-  // Ensure $schema is first
-  const ordered: PackageJson = { $schema: 'https://json.schemastore.org/package' };
-  for (const [key, value] of Object.entries(pkg)) {
-    if (key !== '$schema') ordered[key] = value;
-  }
-
-  return ordered;
+  return mergePackageJson(generated, existingPkg);
 }
 
 function generateGitignore(resolvedFeatures: string[]): string {
@@ -431,20 +393,8 @@ language: {
 `
   );
 
-  const pkgDir = 'cue.mod/pkg/mark1russell7.cue';
-  if (!existsSync(pkgDir)) {
-    mkdirSync(dirname(pkgDir), { recursive: true });
-    try {
-      // A junction on Windows (no admin rights needed), a symbolic link elsewhere
-      symlinkSync(packageRoot, pkgDir, process.platform === 'win32' ? 'junction' : 'dir');
-    } catch {
-      // Fall back to a copy. fs.cpSync instead of 'cp -r', which a Windows shell does not have.
-      mkdirSync(pkgDir, { recursive: true });
-      for (const dir of ['ts', 'npm', 'git']) {
-        cpSync(resolve(packageRoot, dir), resolve(pkgDir, dir), { recursive: true });
-      }
-    }
-  }
+  // A junction on Windows (no admin rights needed), a symbolic link elsewhere. A stale link is made again.
+  linkCuePackage('cue.mod/pkg/mark1russell7.cue', packageRoot);
 }
 
 // Validate ecosystem manifest against CUE schema
