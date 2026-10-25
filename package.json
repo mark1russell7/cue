@@ -1,7 +1,7 @@
 {
   "$schema": "https://json.schemastore.org/package",
   "name": "@mark1russell7/cue",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "cue-config: generate package.json, tsconfig.json and .gitignore for TypeScript projects from composable feature presets (ts, node, react, vite, vitest), validated by CUE schemas. Includes shared tsconfig presets.",
   "license": "MIT",
   "author": "Mark Russell (https://github.com/mark1russell7)",
