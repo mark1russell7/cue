@@ -22,9 +22,20 @@ Other repositories install cue from git (`github:mark1russell7/cue`). Thus `dist
 3. Add the changes to `CHANGELOG.md`, below a heading with the version.
 4. Merge the change to `main`.
 
-The push to `main` starts `release.yml`. The workflow starts the gates of `ci.yml`, builds and packs the package, and publishes the version if npm does not have it. A version with a hyphen, for example `1.2.0-rc.1`, gets the dist-tag `next`. The other versions get `latest`. A tag is not necessary.
+The push to `main` starts `release.yml`. The workflow starts the gates of `ci.yml`, builds and packs the package, and publishes the version if npm does not have it. A version with a hyphen, for example `1.2.0-rc.1`, gets the dist-tag `next`. The other versions get `latest`. You do not make a git tag. After the publish, the workflow makes the tag `v<version>` and a GitHub release.
 
 To publish again after a failure, start the workflow by hand: `gh workflow run release.yml --ref main`. It skips a version that is on npm.
+
+## Git tags and GitHub releases
+
+After the publish, the job `tag` of `release.yml` makes the git tag `v<version>` and a GitHub release for the version that the run published.
+
+- The text of the release is the section of the version in `CHANGELOG.md`. Without a section, the text is one line with a link to npm.
+- A version with a hyphen is a prerelease on GitHub. GitHub does not show it as the latest release.
+- The job skips each tag that exists. Thus a second run of the workflow does no harm.
+- A run also tags a version that it did not publish, when npm has the version with a provenance statement from this repository. The tag goes on the commit that the provenance statement names.
+
+The token of a workflow cannot change workflow files. Thus GitHub refuses a tag from the workflow (HTTP 403) when the workflow files of the commit differ from the workflow files of each branch. For example, the versions before this repository got the job `tag` get no tag from the workflow. For each refused tag, the summary of the run shows a `gh release create` command. Start it with your own GitHub token. The `RELEASING.md` of [mark1russell7/template](https://github.com/mark1russell7/template) tells all the rules.
 
 ## The trusted publisher
 
