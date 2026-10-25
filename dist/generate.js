@@ -6,9 +6,21 @@ import { cpSync, lstatSync, mkdirSync, realpathSync, symlinkSync, unlinkSync } f
 import { dirname, resolve } from 'node:path';
 /**
  * The fields that the package owns. A generated value is only a default for a package that does
- * not have the field. `type` is in the list because it tells how Node.js reads the entry points.
+ * not have the field. The function `mergeType` merges `type`.
  */
-const OWNED_FIELDS = ['exports', 'main', 'types', 'bin', 'sideEffects', 'type'];
+const OWNED_FIELDS = ['exports', 'main', 'types', 'bin', 'sideEffects'];
+/**
+ * This function gives the merged `type`. A generated `module` replaces the type of the package.
+ * The `ts` feature (`ts.json`, `verbatimModuleSyntax`) compiles ES modules, and `tsc` cannot compile
+ * a CommonJS package with it. For example, `npm init` writes `"type": "commonjs"`.
+ * A generated `commonjs` (the `node-cjs` feature) is only a default. `node-cjs.json` (module
+ * `NodeNext`) follows the type of the package, so a package keeps its type.
+ */
+function mergeType(generated, existing) {
+    if (generated === 'module' || existing === undefined)
+        return generated;
+    return existing;
+}
 /**
  * This function merges the `package.json` that CUE generated into the existing `package.json`
  * of a project. The result starts with `$schema`.
@@ -35,8 +47,11 @@ export function mergePackageJson(generated, existingPkg) {
             }
             pkg[key] = merged;
         }
+        else if (key === 'type') {
+            pkg[key] = mergeType(value, pkg[key]);
+        }
         else if (OWNED_FIELDS.includes(key)) {
-            // The package owns its entry points and its module type: the generated value is only a default.
+            // The package owns its entry points: the generated value is only a default.
             // (A generated "exports" with only "." used to replace a package's other entry points.)
             if (pkg[key] === undefined)
                 pkg[key] = value;

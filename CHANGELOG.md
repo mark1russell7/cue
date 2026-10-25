@@ -1,5 +1,11 @@
 # Change history
 
+## 1.0.2
+
+### Corrections
+
+- `generate` gives the type `module` of the `ts` feature to a package that has the type `commonjs`. For example, `npm init` writes `"type": "commonjs"`. In 1.0.1, `generate` kept that type, and `tsc` (`ts.json`, `verbatimModuleSyntax`) did not compile the package. A generated `commonjs` (the `node-cjs` feature) is still only a default, so a `node-cjs` package with the type `module` keeps its type.
+
 ## 1.0.1
 
 ### Corrections

@@ -13,11 +13,24 @@ import { linkCuePackage, mergePackageJson } from '../dist/generate.js';
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
 describe('mergePackageJson', () => {
-  it('keeps the type of an existing package, and gives the generated type to a new package', () => {
+  it('gives the generated type "module" to each package', () => {
+    // The ts feature compiles ES modules, so a CommonJS package (for example from npm init) gets "module"
+    const generated = { name: 'x', type: 'module', main: './dist/index.js' };
+    assert.equal(mergePackageJson(generated, { name: 'a', type: 'commonjs' }).type, 'module');
+    assert.equal(mergePackageJson(generated, { name: 'a', type: 'module' }).type, 'module');
+    assert.equal(mergePackageJson(generated, { name: 'a' }).type, 'module');
+  });
+
+  it('keeps the type of an existing package for the generated type "commonjs" (node-cjs)', () => {
     const generated = { name: 'x', type: 'commonjs', main: './dist/index.js' };
     assert.equal(mergePackageJson(generated, { name: 'a', type: 'module' }).type, 'module');
+    assert.equal(mergePackageJson(generated, { name: 'a', type: 'commonjs' }).type, 'commonjs');
     assert.equal(mergePackageJson(generated, { name: 'a' }).type, 'commonjs');
     assert.equal(mergePackageJson(generated, null).type, 'commonjs');
+  });
+
+  it('keeps the type of a package when the features generate no type', () => {
+    assert.equal(mergePackageJson({ name: 'x' }, { name: 'a', type: 'commonjs' }).type, 'commonjs');
   });
 
   it('keeps the entry points, merges the scripts and puts $schema first', () => {
