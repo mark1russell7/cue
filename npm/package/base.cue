@@ -54,6 +54,7 @@ import "strings"
 // Feature contributions - each feature defines its own, base provides defaults
 ts: {} | *{}
 node: {} | *{}
+nodeCjs: {} | *{}
 react: {} | *{}
 cue: {} | *{}
 vite: {} | *{}
@@ -69,4 +70,4 @@ vitest: {} | *{}
 _engines: node: ">=22"
 
 // Final output: merge all contributions
-output: #PackageJson & ts & node & react & cue & vite & viteReact & vitest & {engines: _engines}
+output: #PackageJson & ts & node & nodeCjs & react & cue & vite & viteReact & vitest & {engines: _engines}
