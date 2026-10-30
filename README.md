@@ -165,6 +165,7 @@ Generate all configuration files from dependencies.json.
 Generates:
 - `package.json` (via CUE evaluation)
 - `tsconfig.json` (extends appropriate base config)
+- `tsconfig.test.json` (only with the `test` feature, see [Type-check the tests](#type-check-the-tests-the-test-feature))
 - `.gitignore` (via CUE evaluation)
 - `cue.mod/` (if `cue` feature is enabled)
 
@@ -238,6 +239,7 @@ import viteConfig from "@mark1russell7/cue/ts/config/vite.json";
 - `node-cjs.json` - Node.js CommonJS configuration
 - `vite.json` - Vite configuration
 - `react.json` - React configuration
+- `test.json` - the options of `tsconfig.test.json` (the `test` feature). It is not a full configuration: extend `tsconfig.json` first
 
 #### Features Manifest
 
@@ -267,6 +269,7 @@ graph LR
     ts --> react
     ts --> vite
     ts --> vitest
+    ts --> test
     vite --> vite-react
     react --> vite-react
 
@@ -290,6 +293,42 @@ graph LR
 | `vite-react` | vite, react | Vite + React application |
 | `cue` | npm | CUE configuration support |
 | `vitest` | ts | Vitest testing framework |
+| `test` | ts | Opt-in. Type-checks the tests with `tsconfig.test.json` |
+
+### Type-check the tests (the `test` feature)
+
+The presets of `tsconfig.json` do not read the tests (`lib.json` excludes `*.test.ts` and `*.spec.ts`). The `test` feature adds a second configuration that reads them. The feature is off by default. Without it, `generate` writes the same files as version 1.0.2.
+
+To turn on the feature, run these commands in the package folder:
+
+```bash
+npx cue-config add test
+npx cue-config generate
+```
+
+Then `generate` makes these changes:
+
+1. It writes `tsconfig.test.json`:
+
+   ```json
+   {
+     "$schema": "https://json.schemastore.org/tsconfig",
+     "extends": [
+       "./tsconfig.json",
+       "@mark1russell7/cue/ts/config/test.json"
+     ]
+   }
+   ```
+
+   `ts/config/test.json` includes `src/`, `test/`, `__tests__/`, `e2e/`, `bench/` and the files `*.config.ts` and `*.config.mts` of the package folder. It sets `noEmit`, and it turns off `composite`, `incremental`, `declaration`, `declarationMap` and `isolatedDeclarations`. `${configDir}` is the folder of `tsconfig.test.json`, thus the paths start at the package folder. This needs TypeScript 5.5 or later.
+
+2. The `typecheck` script becomes `tsc --noEmit && tsc -p tsconfig.test.json`.
+
+3. With the `vitest` feature, the `test` script becomes `vitest run`, with no `--passWithNoTests`. A package that has no test file fails the script.
+
+An existing script in `package.json` stays, as for each script. There is one exception: a script that has the value of an earlier `generate` gets the new value. Thus `"typecheck": "tsc --noEmit"` becomes the new `typecheck` script, and `"test": "vitest run --passWithNoTests"` becomes `"test": "vitest run"`. A script with a different value stays. To get the new value for such a script, remove the script from `package.json` and run `generate` again.
+
+To turn off the feature, run `npx cue-config remove test`. Then remove `tsconfig.test.json` and the `typecheck` and `test` scripts from `package.json`, and run `npx cue-config generate`. `generate` does not remove files or scripts.
 
 ### Feature Resolution
 
@@ -611,7 +650,7 @@ Install from: https://cuelang.org/docs/install/
 
 ```
 Unknown feature: 'foo'
-Available: git, npm, ts, node, node-cjs, react, vite, vite-react, cue, vitest
+Available: git, npm, ts, react, node, node-cjs, vite, vite-react, cue, vitest, test
 ```
 
 **Solution:** Use one of the available features or check for typos.

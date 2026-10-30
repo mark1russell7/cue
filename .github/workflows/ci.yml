@@ -1,5 +1,5 @@
 # The CI of cue: the shared CI of mark1russell7 (reusable-ci.yml of mark1russell7/template, its
-# CI.md). The scripts build and typecheck run on Node.js 24 and 26. Then the CLI starts, and
+# CI.md). The scripts build, typecheck and test run on Node.js 24 and 26. Then the CLI starts, and
 # npm pack --dry-run shows the files of the tarball.
 name: CI
 
@@ -21,8 +21,13 @@ jobs:
   ci:
     uses: mark1russell7/template/.github/workflows/reusable-ci.yml@787183c2d49e3bb10031457cb36fc4ae8975eeb2 # main
     with:
+      # The tests of generate need the cue CLI (the version of cue.mod/module.cue). Without it, they skip.
+      setup: |
+        mkdir -p "$HOME/.local/bin"
+        curl -fsSL https://github.com/cue-lang/cue/releases/download/v0.15.1/cue_v0.15.1_linux_amd64.tar.gz | tar -xz -C "$HOME/.local/bin" cue
+        echo "$HOME/.local/bin" >> "$GITHUB_PATH"
       # The install also starts "prepare", which builds dist/ (other repositories install cue from git)
-      scripts: build typecheck
+      scripts: build typecheck test
       node-versions: '["24", "26"]'
       # The CLI starts, and npm pack shows the files of the tarball
       run: |

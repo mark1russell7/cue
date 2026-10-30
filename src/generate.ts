@@ -33,6 +33,30 @@ function mergeType(generated: unknown, existing: unknown): unknown {
 }
 
 /**
+ * The scripts that earlier versions of `generate` wrote, by name. An existing script with one of
+ * these values is a generated value, not a value of the package. Thus the generated script
+ * replaces it. When a package adds the `test` feature, its `typecheck` and `test` scripts get the
+ * new values. Without the `test` feature, the generated values are these values, so nothing changes.
+ */
+const OLD_GENERATED_SCRIPTS: Readonly<Record<string, readonly string[]>> = {
+  typecheck: ['tsc --noEmit'],
+  test: ['vitest run --passWithNoTests'],
+};
+
+/**
+ * This function merges the generated scripts into the existing scripts. An existing script wins,
+ * but a script with an old generated value (`OLD_GENERATED_SCRIPTS`) gets the generated value.
+ */
+function mergeScripts(generated: Record<string, unknown>, existing: Record<string, unknown> | undefined): Record<string, unknown> {
+  const merged: Record<string, unknown> = { ...generated, ...existing };
+  for (const [name, value] of Object.entries(generated)) {
+    const current = existing?.[name];
+    if (typeof current === 'string' && OLD_GENERATED_SCRIPTS[name]?.includes(current)) merged[name] = value;
+  }
+  return merged;
+}
+
+/**
  * This function merges the `package.json` that CUE generated into the existing `package.json`
  * of a project. The result starts with `$schema`.
  */
@@ -44,7 +68,9 @@ export function mergePackageJson(generated: PackageJson, existingPkg: PackageJso
     if (key === 'name' || key === 'version' || key === 'description') {
       // Keep existing if present
       if (!pkg[key]) pkg[key] = value as string;
-    } else if (key === 'devDependencies' || key === 'peerDependencies' || key === 'scripts') {
+    } else if (key === 'scripts') {
+      pkg[key] = mergeScripts(value as Record<string, unknown>, pkg[key] as Record<string, unknown> | undefined);
+    } else if (key === 'devDependencies' || key === 'peerDependencies') {
       // Merge objects
       pkg[key] = { ...(value as Record<string, unknown>), ...(pkg[key] as Record<string, unknown> ?? {}) };
     } else if (key === 'files' && Array.isArray(value) && Array.isArray(pkg[key])) {
@@ -72,6 +98,42 @@ export function mergePackageJson(generated: PackageJson, existingPkg: PackageJso
     if (key !== '$schema') ordered[key] = value;
   }
   return ordered;
+}
+
+/** The features with a tsconfig preset. A later feature wins: it is more specific. */
+const TSCONFIG_PRIORITY: readonly string[] = ['ts', 'node', 'node-cjs', 'vite', 'react'];
+
+/** This function gives the name of the tsconfig preset of the features (`ts` when no other one applies). */
+export function tsconfigPresetOf(resolvedFeatures: readonly string[]): string {
+  let selected = 'ts';
+  for (const feature of TSCONFIG_PRIORITY) {
+    if (resolvedFeatures.includes(feature)) selected = feature;
+  }
+  return selected;
+}
+
+/**
+ * This function gives the tsconfig files that `generate` writes for the resolved features, by file
+ * name. Without the `ts` feature, it gives no file. The `test` feature (opt-in) adds
+ * `tsconfig.test.json`: it extends `tsconfig.json` and the preset `test.json`, which includes the
+ * tests and emits nothing.
+ */
+export function generateTsconfigFiles(resolvedFeatures: readonly string[]): Record<string, string> {
+  const files: Record<string, string> = {};
+  if (!resolvedFeatures.includes('ts')) return files;
+  const tsconfig = {
+    $schema: 'https://json.schemastore.org/tsconfig',
+    extends: `@mark1russell7/cue/ts/config/${tsconfigPresetOf(resolvedFeatures)}.json`,
+  };
+  files['tsconfig.json'] = JSON.stringify(tsconfig, null, 2) + '\n';
+  if (resolvedFeatures.includes('test')) {
+    const tsconfigTest = {
+      $schema: 'https://json.schemastore.org/tsconfig',
+      extends: ['./tsconfig.json', '@mark1russell7/cue/ts/config/test.json'],
+    };
+    files['tsconfig.test.json'] = JSON.stringify(tsconfigTest, null, 2) + '\n';
+  }
+  return files;
 }
 
 /** The real path of `path`, or null when it does not exist (for example a link to a removed folder). */

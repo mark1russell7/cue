@@ -10,7 +10,8 @@
     "vite": { "dependencies": ["ts"] },
     "vite-react": { "dependencies": ["vite", "react"] },
     "cue": { "dependencies": ["npm"] },
-    "vitest": { "dependencies": ["ts"] }
+    "vitest": { "dependencies": ["ts"] },
+    "test": { "dependencies": ["ts"] }
   },
   "presets": {
     "lib": ["ts", "cue", "vitest"],

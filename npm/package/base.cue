@@ -60,6 +60,7 @@ cue: {} | *{}
 vite: {} | *{}
 viteReact: {} | *{}
 vitest: {} | *{}
+test: {} | *{}
 
 // Build approval is not generated here: it belongs in "allowBuilds" in pnpm-workspace.yaml (pnpm 11
 // and later). The old auto-population of "pnpm.onlyBuiltDependencies" referred to "output" from
@@ -70,4 +71,4 @@ vitest: {} | *{}
 _engines: node: ">=22"
 
 // Final output: merge all contributions
-output: #PackageJson & ts & node & nodeCjs & react & cue & vite & viteReact & vitest & {engines: _engines}
+output: #PackageJson & ts & node & nodeCjs & react & cue & vite & viteReact & vitest & test & {engines: _engines}
