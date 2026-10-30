@@ -14,6 +14,15 @@ export interface PackageJson {
  * of a project. The result starts with `$schema`.
  */
 export declare function mergePackageJson(generated: PackageJson, existingPkg: PackageJson | null): PackageJson;
+/** This function gives the name of the tsconfig preset of the features (`ts` when no other one applies). */
+export declare function tsconfigPresetOf(resolvedFeatures: readonly string[]): string;
+/**
+ * This function gives the tsconfig files that `generate` writes for the resolved features, by file
+ * name. Without the `ts` feature, it gives no file. The `test` feature (opt-in) adds
+ * `tsconfig.test.json`: it extends `tsconfig.json` and the preset `test.json`, which includes the
+ * tests and emits nothing.
+ */
+export declare function generateTsconfigFiles(resolvedFeatures: readonly string[]): Record<string, string>;
 /**
  * This function makes `pkgDir` a link to `target`: a junction on Windows, a symbolic link on other
  * systems. It replaces a link to a different folder and a link to a folder that does not exist.

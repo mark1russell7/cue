@@ -1,5 +1,20 @@
 # Change history
 
+## 1.1.0
+
+MINOR: new opt-in test preset.
+
+### Functions
+
+- The new feature `test` type-checks the tests of a package. It is off by default. To turn it on, run `npx cue-config add test` and then `npx cue-config generate`. The README tells the details ("Type-check the tests").
+- With the `test` feature, `generate` writes `tsconfig.test.json`. It extends `./tsconfig.json` and the new preset `@mark1russell7/cue/ts/config/test.json`. The preset includes `src/`, `test/`, `__tests__/`, `e2e/`, `bench/`, `*.config.ts` and `*.config.mts`, and it emits nothing.
+- With the `test` feature, the `typecheck` script is `tsc --noEmit && tsc -p tsconfig.test.json`. With the `vitest` feature too, the `test` script is `vitest run`, with no `--passWithNoTests`.
+- `generate` gives the new value to a script that has the value of an earlier `generate` (`"typecheck": "tsc --noEmit"`, `"test": "vitest run --passWithNoTests"`). Other existing scripts stay.
+- `tsconfigPresets` has the new name `test`. The schema of `features.json` has the features `vitest` and `test`. The schema of `dependencies.json` has the feature `test`.
+- CI installs the `cue` CLI (v0.15.1) and starts `pnpm test` too.
+
+Without the `test` feature, `generate` writes the same files as 1.0.2. The tests compare the files of 16 feature sets with the files of 1.0.2 (`test/fixtures/`).
+
 ## 1.0.2
 
 ### Corrections

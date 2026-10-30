@@ -3,7 +3,7 @@ package features
 // Features.json schema
 // Defines available features, their dependencies, and presets
 
-#FeatureName: "git" | "npm" | "ts" | "react" | "node" | "vite" | "vite-react" | "cue" | "node-cjs"
+#FeatureName: "git" | "npm" | "ts" | "react" | "node" | "vite" | "vite-react" | "cue" | "node-cjs" | "vitest" | "test"
 
 #Feature: {
 	dependencies: [...#FeatureName]

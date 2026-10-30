@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "compilerOptions": {
+    "noEmit": true,
+    "composite": false,
+    "incremental": false,
+    "declaration": false,
+    "declarationMap": false,
+    "isolatedDeclarations": false,
+    "rootDir": "${configDir}"
+  },
+  "include": [
+    "${configDir}/src/**/*",
+    "${configDir}/test/**/*",
+    "${configDir}/__tests__/**/*",
+    "${configDir}/e2e/**/*",
+    "${configDir}/bench/**/*",
+    "${configDir}/*.config.ts",
+    "${configDir}/*.config.mts"
+  ],
+  "exclude": ["${configDir}/node_modules", "${configDir}/dist"]
+}

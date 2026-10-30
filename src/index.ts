@@ -12,8 +12,11 @@ import { packageRoot, readFeatures, resolveFeatures, type FeaturesManifest } fro
 export { packageRoot, readFeatures, resolveFeatures };
 export type { Feature, FeaturesManifest } from './features.js';
 
-/** The names of the tsconfig presets in `ts/config` (for `"extends": "@mark1russell7/cue/ts/config/<name>.json"`). */
-export const tsconfigPresets = ['base', 'esm', 'cjs', 'lib', 'ts', 'node', 'node-cjs', 'vite', 'react'] as const;
+/**
+ * The names of the tsconfig presets in `ts/config` (for `"extends": "@mark1russell7/cue/ts/config/<name>.json"`).
+ * `test` is not a full config: `tsconfig.test.json` extends `tsconfig.json` and then `test.json`.
+ */
+export const tsconfigPresets = ['base', 'esm', 'cjs', 'lib', 'ts', 'node', 'node-cjs', 'vite', 'react', 'test'] as const;
 
 /** One name of `tsconfigPresets`. */
 export type TsconfigPreset = (typeof tsconfigPresets)[number];

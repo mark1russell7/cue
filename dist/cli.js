@@ -4,12 +4,10 @@ import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { readFeatures, resolveFeatures as resolveManifestFeatures } from './features.js';
-import { linkCuePackage, mergePackageJson } from './generate.js';
+import { generateTsconfigFiles, linkCuePackage, mergePackageJson, tsconfigPresetOf } from './generate.js';
 // Constants
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const packageRoot = resolve(__dirname, '..');
-// Tsconfig priority: later features override earlier (most specific wins)
-const TSCONFIG_PRIORITY = ['ts', 'node', 'node-cjs', 'vite', 'react'];
 // ============================================================================
 // Core Functions
 // ============================================================================
@@ -127,16 +125,6 @@ function generateGitignore(resolvedFeatures) {
     const patterns = JSON.parse(result.stdout);
     return patterns.join('\n') + '\n';
 }
-function determineTsconfig(resolvedFeatures) {
-    // Find the most specific tsconfig (highest priority feature wins)
-    let selected = 'ts'; // default
-    for (const feature of TSCONFIG_PRIORITY) {
-        if (resolvedFeatures.includes(feature)) {
-            selected = feature;
-        }
-    }
-    return selected;
-}
 // ============================================================================
 // Commands
 // ============================================================================
@@ -148,12 +136,14 @@ Commands:
   add <feature>            Add a feature to dependencies.json
   remove <feature>         Remove a feature from dependencies.json
   generate                 Generate package.json, tsconfig.json, .gitignore
+                           (and tsconfig.test.json with the test feature)
   validate                 Validate dependencies.json
   validate-manifest        Validate ecosystem.manifest.json against schema
   validate-structure       Validate project folder structure
 
 Presets: lib, react-lib, app
-Features: git, npm, ts, node, node-cjs, react, vite, vite-react, cue, vitest
+Features: git, npm, ts, node, node-cjs, react, vite, vite-react, cue, vitest, test
+  (test is opt-in: tsconfig.test.json and a typecheck script that type-checks the tests)
 
 Examples:
   cue-config init                        # Initialize with default 'lib' preset
@@ -273,15 +263,11 @@ function generate() {
     const packageJson = generatePackageJson(resolvedFeatures, existingPkg);
     writeFileSync('package.json', JSON.stringify(packageJson, null, 2) + '\n');
     console.log('Generated package.json');
-    // Generate tsconfig.json
-    if (resolvedFeatures.includes('ts')) {
-        const tsconfigName = determineTsconfig(resolvedFeatures);
-        const tsconfig = {
-            $schema: 'https://json.schemastore.org/tsconfig',
-            extends: `@mark1russell7/cue/ts/config/${tsconfigName}.json`,
-        };
-        writeFileSync('tsconfig.json', JSON.stringify(tsconfig, null, 2) + '\n');
-        console.log(`Generated tsconfig.json (extends ${tsconfigName}.json)`);
+    // Generate tsconfig.json (ts feature) and tsconfig.test.json (test feature)
+    for (const [fileName, content] of Object.entries(generateTsconfigFiles(resolvedFeatures))) {
+        writeFileSync(fileName, content);
+        const extended = fileName === 'tsconfig.json' ? `${tsconfigPresetOf(resolvedFeatures)}.json` : 'tsconfig.json and test.json';
+        console.log(`Generated ${fileName} (extends ${extended})`);
     }
     // Generate .gitignore via CUE
     const gitignoreContent = generateGitignore(resolvedFeatures);

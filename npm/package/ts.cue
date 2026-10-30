@@ -13,7 +13,7 @@ ts: {
 	sideEffects: false
 	scripts: {
 		build: string | *"tsc -b"  // Default can be overridden by vite
-		typecheck: "tsc --noEmit"
+		typecheck: string | *"tsc --noEmit" // The test feature also type-checks the tests
 		clean: "rm -rf dist .tsbuildinfo"
 	}
 	devDependencies: {

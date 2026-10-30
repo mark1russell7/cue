@@ -3,7 +3,7 @@ package dependencies
 // Dependencies.json schema
 // User declares which features their project uses
 
-#FeatureName: "git" | "npm" | "ts" | "react" | "node" | "vite" | "vite-react" | "cue" | "node-cjs" | "vitest"
+#FeatureName: "git" | "npm" | "ts" | "react" | "node" | "vite" | "vite-react" | "cue" | "node-cjs" | "vitest" | "test"
 
 #Dependencies: {
 	"$schema"?: string

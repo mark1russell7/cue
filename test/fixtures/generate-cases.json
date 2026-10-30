@@ -1,0 +1,37 @@
+{
+  "git": { "features": ["git"] },
+  "npm": { "features": ["npm"] },
+  "ts": { "features": ["ts"] },
+  "node": { "features": ["node"] },
+  "node-cjs": { "features": ["node-cjs"] },
+  "react": { "features": ["react"] },
+  "vite": { "features": ["vite"] },
+  "vite-react": { "features": ["vite-react"] },
+  "cue": { "features": ["cue"] },
+  "vitest": { "features": ["vitest"] },
+  "preset lib": { "features": ["ts", "cue", "vitest"] },
+  "preset react-lib": { "features": ["react", "cue", "vitest"] },
+  "preset app": { "features": ["vite-react", "cue", "vitest"] },
+  "ts, node, cue, vitest": { "features": ["ts", "node", "cue", "vitest"] },
+  "an existing package (ts, node, cue, vitest)": {
+    "features": ["ts", "node", "cue", "vitest"],
+    "packageJson": {
+      "name": "@procedures/example",
+      "version": "0.3.1",
+      "description": "An example package",
+      "type": "module",
+      "main": "./dist/index.js",
+      "scripts": { "build": "tsc -b", "typecheck": "tsc --noEmit", "test": "vitest run", "lint": "eslint ." },
+      "dependencies": { "@procedures/client": "workspace:*" },
+      "devDependencies": { "typescript": "^7.0.2" }
+    }
+  },
+  "an existing package with the old defaults (ts, vitest)": {
+    "features": ["ts", "vitest"],
+    "packageJson": {
+      "name": "old-defaults",
+      "version": "1.0.0",
+      "scripts": { "typecheck": "tsc --noEmit", "test": "vitest run --passWithNoTests" }
+    }
+  }
+}
