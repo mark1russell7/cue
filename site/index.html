@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>cue: package.json, tsconfig.json and .gitignore from features, live</title>
+    <meta name="description" content="Pick the features of a TypeScript package, for example node, react, vite and vitest. See the files that cue-config generate writes, and the feature that gave each line." />
+    <meta name="color-scheme" content="light dark" />
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%2317192a'/%3E%3Crect x='7' y='8' width='18' height='3' rx='1.5' fill='%2336c28f'/%3E%3Crect x='7' y='14.5' width='12' height='3' rx='1.5' fill='%23a597e8'/%3E%3Crect x='7' y='21' width='15' height='3' rx='1.5' fill='%2393abff'/%3E%3C/svg%3E" />
+    <script>
+      // The saved theme applies before the first paint, so a dark page does not flash white.
+      try {
+        const t = localStorage.getItem("cue-theme");
+        if (t === "light" || t === "dark") document.documentElement.dataset.theme = t;
+      } catch {}
+    </script>
+  </head>
+  <body>
+    <a class="skip" href="#playground">Skip to the playground</a>
+    <header class="top">
+      <div class="brand">
+        <h1 class="wordmark"><span class="mark" aria-hidden="true"><i></i><i></i><i></i></span>cue</h1>
+        <p class="lead">
+          Pick the features of a TypeScript package. See the files that <code>cue-config generate</code> writes, and the feature that gave each line.
+        </p>
+      </div>
+      <nav class="links" aria-label="Site">
+        <a href="#playground">Playground</a>
+        <a href="#how">How it works</a>
+        <a href="#cli">CLI</a>
+        <a href="#install">Install</a>
+        <a href="releases/">Releases</a>
+        <a href="status/">Status</a>
+        <a href="https://github.com/mark1russell7/cue">GitHub</a>
+        <button type="button" class="theme" id="theme" aria-label="Color theme">Theme: auto</button>
+      </nav>
+    </header>
+
+    <main>
+      <section id="playground" class="core" aria-labelledby="playground-title">
+        <h2 id="playground-title" class="sr">Feature playground</h2>
+
+        <div class="card picker">
+          <div class="field">
+            <span class="label" id="presets-label">1. Start from a preset</span>
+            <div class="chips" id="presets" role="group" aria-labelledby="presets-label"></div>
+          </div>
+          <div class="field">
+            <span class="label" id="features-label">2. Turn features on or off <span class="hint" id="feature-count"></span></span>
+            <ul class="features" id="features" aria-labelledby="features-label"></ul>
+          </div>
+          <div class="field">
+            <span class="label">3. The commands</span>
+            <div class="codeblock">
+              <pre><code id="commands"></code></pre>
+              <button type="button" class="copy" id="copy-commands">Copy</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="card files">
+          <div class="tabs" id="tabs" role="tablist" aria-label="Generated files"></div>
+          <div class="toolbar">
+            <label class="ctl diff-ctl">Diff of one feature <select id="diff"></select></label>
+            <p class="hint" id="file-note" aria-live="polite"></p>
+          </div>
+          <div class="code" id="code" role="tabpanel" tabindex="0" aria-live="polite"></div>
+          <div class="codefoot">
+            <p class="legend hint" id="legend"></p>
+            <button type="button" class="copy-file" id="copy-file">Copy the file</button>
+          </div>
+          <details class="existing" id="existing-box">
+            <summary>Merge into your own <code>package.json</code></summary>
+            <p class="hint">
+              <code>generate</code> keeps your name, version, entry points and scripts. Paste a <code>package.json</code>, and the playground merges it as the CLI does.
+            </p>
+            <textarea id="existing" class="mono" rows="7" spellcheck="false" autocomplete="off" autocapitalize="off" aria-describedby="existing-hint" placeholder='{ "name": "my-lib", "version": "1.2.0" }'></textarea>
+            <div class="buttons">
+              <button type="button" id="existing-example">Use an example</button>
+              <button type="button" id="existing-clear">Clear</button>
+            </div>
+            <p class="hint" id="existing-hint" aria-live="polite"></p>
+          </details>
+        </div>
+      </section>
+
+      <section id="how" class="section" aria-labelledby="how-title">
+        <div class="section-head">
+          <h2 id="how-title">How it works</h2>
+        </div>
+        <ol class="steps-how">
+          <li class="card">
+            <h3>You list features</h3>
+            <p><code>dependencies.json</code> lists the features of the package. <code>cue-config init</code>, <code>add</code> and <code>remove</code> change the list.</p>
+          </li>
+          <li class="card">
+            <h3>The features resolve</h3>
+            <p>Each feature brings the features that it needs, from <code>features.json</code>. For example, <code>node</code> brings <code>ts</code>, <code>npm</code> and <code>git</code>.</p>
+          </li>
+          <li class="card">
+            <h3>CUE unifies the files</h3>
+            <p>
+              CUE unifies <code>base.cue</code> with the file of each feature. <code>npm/package/</code> gives <code>package.json</code>, and <code>git/ignore/</code> gives <code>.gitignore</code>.
+              <code>tsconfig.json</code> extends the most specific preset of <code>ts/config/</code>.
+            </p>
+          </li>
+          <li class="card">
+            <h3>The result merges</h3>
+            <p><code>generate</code> merges the result into your <code>package.json</code>. Your name, version, entry points and scripts stay.</p>
+          </li>
+        </ol>
+        <p class="hint honest" id="honest"></p>
+
+        <div class="card table-card">
+          <div class="table-scroll">
+            <table>
+              <thead>
+                <tr><th scope="col">Feature</th><th scope="col">Needs</th><th scope="col">CUE files</th><th scope="col">What it adds alone</th></tr>
+              </thead>
+              <tbody id="feature-rows"></tbody>
+            </table>
+          </div>
+        </div>
+        <details class="card cue-source" id="cue-source-box">
+          <summary>The CUE file <code id="cue-source-name"></code></summary>
+          <div class="codeblock">
+            <pre><code id="cue-source"></code></pre>
+          </div>
+        </details>
+      </section>
+
+      <section id="cli" class="section" aria-labelledby="cli-title">
+        <div class="section-head">
+          <h2 id="cli-title">The CLI</h2>
+          <p class="hint">The package has the binary <code>cue-config</code>. Start each command in the folder of the package.</p>
+        </div>
+        <div class="card table-card">
+          <div class="table-scroll">
+            <table class="cli">
+              <thead>
+                <tr><th scope="col">Command</th><th scope="col">What it does</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><code>init [--preset NAME] [--force]</code></td><td>Writes <code>dependencies.json</code> with the features of a preset (<code>lib</code> is the default), and <code>src/index.ts</code>.</td></tr>
+                <tr><td><code>add &lt;feature&gt;</code></td><td>Adds a feature to <code>dependencies.json</code>.</td></tr>
+                <tr><td><code>remove &lt;feature&gt;</code></td><td>Removes a feature from <code>dependencies.json</code>.</td></tr>
+                <tr><td><code>generate</code></td><td>Writes <code>package.json</code>, <code>tsconfig.json</code>, <code>.gitignore</code> and, with the <code>test</code> feature, <code>tsconfig.test.json</code>. With the <code>cue</code> feature, it also writes <code>cue.mod/</code>.</td></tr>
+                <tr><td><code>validate</code></td><td>Examines <code>dependencies.json</code> with its CUE schema.</td></tr>
+                <tr><td><code>validate-manifest [--path PATH]</code></td><td>Examines an <code>ecosystem.manifest.json</code> with its CUE schema.</td></tr>
+                <tr><td><code>validate-structure [--path PATH]</code></td><td>Examines the files and the folders of a project.</td></tr>
+                <tr><td><code>self-generate</code></td><td>Writes the <code>package.json</code> of the cue package with its own features.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <section id="install" class="section" aria-labelledby="install-title">
+        <div class="section-head">
+          <h2 id="install-title">Install</h2>
+          <p class="hint"><code>generate</code> also needs the <a href="https://cuelang.org/docs/install/">CUE CLI</a> on the <code>PATH</code>.</p>
+        </div>
+        <div class="card install">
+          <div class="codeblock">
+            <pre><code id="install-cmd">pnpm add -D @mark1russell7/cue</code></pre>
+            <button type="button" class="copy" data-copy="install-cmd">Copy</button>
+          </div>
+          <div class="codeblock">
+            <pre><code id="start-cmd">npx cue-config init --preset lib
+npx cue-config generate</code></pre>
+            <button type="button" class="copy" data-copy="start-cmd">Copy</button>
+          </div>
+          <div class="codeblock">
+            <pre><code id="sample">import { presetFeatures, tsconfigPresetPath } from "@mark1russell7/cue";
+import { generateTsconfigFiles, resolveFeatures } from "@mark1russell7/cue/core";
+
+presetFeatures("lib");         // ["ts", "cue", "vitest", "npm", "git"]
+tsconfigPresetPath("node");    // .../@mark1russell7/cue/ts/config/node.json
+generateTsconfigFiles(["ts", "node"]); // { "tsconfig.json": ... }</code></pre>
+            <button type="button" class="copy" data-copy="sample">Copy</button>
+          </div>
+          <p class="hint">The entry point <code>@mark1russell7/cue/core</code> has no Node.js module. This page bundles it.</p>
+        </div>
+      </section>
+    </main>
+
+    <footer class="foot">
+      <p>MIT license. <a href="https://github.com/mark1russell7/cue">github.com/mark1russell7/cue</a> · <span id="build"></span></p>
+    </footer>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

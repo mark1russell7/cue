@@ -1,28 +1,10 @@
 /**
  * The parts of `cue-config generate` that do not start CUE: the merge of a generated
- * `package.json` into the existing one, and the link `cue.mod/pkg/mark1russell7.cue` to the package.
+ * `package.json` into the existing one, the tsconfig files, and the link `cue.mod/pkg/mark1russell7.cue`
+ * to the package. The merge and the tsconfig files are in `core.ts`, which has no Node.js module.
  */
-/** A `package.json`, as JSON. */
-export interface PackageJson {
-    $schema?: string;
-    name?: string;
-    version?: string;
-    [key: string]: unknown;
-}
-/**
- * This function merges the `package.json` that CUE generated into the existing `package.json`
- * of a project. The result starts with `$schema`.
- */
-export declare function mergePackageJson(generated: PackageJson, existingPkg: PackageJson | null): PackageJson;
-/** This function gives the name of the tsconfig preset of the features (`ts` when no other one applies). */
-export declare function tsconfigPresetOf(resolvedFeatures: readonly string[]): string;
-/**
- * This function gives the tsconfig files that `generate` writes for the resolved features, by file
- * name. Without the `ts` feature, it gives no file. The `test` feature (opt-in) adds
- * `tsconfig.test.json`: it extends `tsconfig.json` and the preset `test.json`, which includes the
- * tests and emits nothing.
- */
-export declare function generateTsconfigFiles(resolvedFeatures: readonly string[]): Record<string, string>;
+export { generateTsconfigFiles, mergePackageJson, tsconfigPresetOf } from './core.js';
+export type { PackageJson } from './core.js';
 /**
  * This function makes `pkgDir` a link to `target`: a junction on Windows, a symbolic link on other
  * systems. It replaces a link to a different folder and a link to a folder that does not exist.

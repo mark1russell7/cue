@@ -4,7 +4,8 @@ import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { readFeatures, resolveFeatures as resolveManifestFeatures } from './features.js';
-import { generateTsconfigFiles, linkCuePackage, mergePackageJson, tsconfigPresetOf } from './generate.js';
+import { cueEvalArgs, cueFiles, cueTargets, dependenciesJsonText, generateFiles } from './core.js';
+import { linkCuePackage, mergePackageJson, tsconfigPresetOf } from './generate.js';
 // Constants
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const packageRoot = resolve(__dirname, '..');
@@ -34,11 +35,7 @@ function loadDependencies(projectPath = '.') {
     process.exit(1);
 }
 function saveDependencies(deps, projectPath = '.') {
-    const depsJson = {
-        $schema: './node_modules/@mark1russell7/cue/dependencies/schema.json',
-        dependencies: deps,
-    };
-    writeFileSync(resolve(projectPath, 'dependencies.json'), JSON.stringify(depsJson, null, 2) + '\n');
+    writeFileSync(resolve(projectPath, 'dependencies.json'), dependenciesJsonText(deps));
 }
 function loadPackageJson(projectPath = '.') {
     const pkgPath = resolve(projectPath, 'package.json');
@@ -52,14 +49,6 @@ function resolveFeatures(requested, manifest) {
     return resolveManifestFeatures(requested, manifest, (feature) => {
         console.error(`Warning: Unknown feature '${feature}'`);
     });
-}
-// Map feature name to CUE file field name (handle vite-react -> viteReact, node-cjs -> nodeCjs)
-function featureToFieldName(feature) {
-    if (feature === 'vite-react')
-        return 'viteReact';
-    if (feature === 'node-cjs')
-        return 'nodeCjs';
-    return feature;
 }
 // ============================================================================
 // CUE Evaluation
@@ -75,55 +64,25 @@ function checkCue() {
         return false;
     }
 }
-function generatePackageJson(resolvedFeatures, existingPkg, _projectPath = '.') {
-    const configDir = resolve(packageRoot, 'npm/package');
-    // Build list of CUE files to evaluate
-    const files = ['base.cue'];
-    for (const feature of resolvedFeatures) {
-        const fieldName = featureToFieldName(feature);
-        const cuePath = resolve(configDir, `${fieldName}.cue`);
-        if (existsSync(cuePath)) {
-            files.push(`${fieldName}.cue`);
-        }
-    }
-    // Run cue eval
-    const result = spawnSync('cue', ['eval', ...files, '-e', 'output', '--out', 'json'], {
+// The output of `cue eval` for the CUE files of the resolved features (core.ts gives the files and the arguments)
+function evalCue(resolvedFeatures, target, what) {
+    const configDir = resolve(packageRoot, cueTargets[target].dir);
+    const files = cueFiles(resolvedFeatures, target, (file) => existsSync(resolve(configDir, file)));
+    const result = spawnSync('cue', cueEvalArgs(files, target), {
         cwd: configDir,
         encoding: 'utf-8',
         stdio: ['inherit', 'pipe', 'pipe'],
     });
     if (result.status !== 0) {
-        console.error('CUE evaluation failed for package.json:');
+        console.error(`CUE evaluation failed for ${what}:`);
         console.error(result.stderr);
         process.exit(1);
     }
-    const generated = JSON.parse(result.stdout);
-    // Merge with existing package.json
-    return mergePackageJson(generated, existingPkg);
+    return JSON.parse(result.stdout);
 }
-function generateGitignore(resolvedFeatures) {
-    const configDir = resolve(packageRoot, 'git/ignore');
-    // Build list of CUE files to evaluate
-    const files = ['base.cue'];
-    for (const feature of resolvedFeatures) {
-        const cuePath = resolve(configDir, `${feature}.cue`);
-        if (existsSync(cuePath)) {
-            files.push(`${feature}.cue`);
-        }
-    }
-    // Run cue eval
-    const result = spawnSync('cue', ['eval', ...files, '-e', 'patterns', '--out', 'json'], {
-        cwd: configDir,
-        encoding: 'utf-8',
-        stdio: ['inherit', 'pipe', 'pipe'],
-    });
-    if (result.status !== 0) {
-        console.error('CUE evaluation failed for .gitignore:');
-        console.error(result.stderr);
-        process.exit(1);
-    }
-    const patterns = JSON.parse(result.stdout);
-    return patterns.join('\n') + '\n';
+// The package.json of CUE, merged with the existing package.json
+function generatePackageJson(resolvedFeatures, existingPkg) {
+    return mergePackageJson(evalCue(resolvedFeatures, 'package', 'package.json'), existingPkg);
 }
 // ============================================================================
 // Commands
@@ -259,20 +218,21 @@ function generate() {
     const resolvedFeatures = resolveFeatures(deps, manifest);
     console.log(`Resolved features: ${resolvedFeatures.join(', ')}`);
     const existingPkg = loadPackageJson();
-    // Generate package.json via CUE
-    const packageJson = generatePackageJson(resolvedFeatures, existingPkg);
-    writeFileSync('package.json', JSON.stringify(packageJson, null, 2) + '\n');
-    console.log('Generated package.json');
-    // Generate tsconfig.json (ts feature) and tsconfig.test.json (test feature)
-    for (const [fileName, content] of Object.entries(generateTsconfigFiles(resolvedFeatures))) {
+    // package.json and .gitignore via CUE, tsconfig.json (ts feature) and tsconfig.test.json (test feature).
+    // core.ts makes the text of each file, so the site of the package gives the same files.
+    const cue = {
+        packageJson: evalCue(resolvedFeatures, 'package', 'package.json'),
+        patterns: evalCue(resolvedFeatures, 'ignore', '.gitignore'),
+    };
+    for (const [fileName, content] of Object.entries(generateFiles(resolvedFeatures, cue, existingPkg))) {
         writeFileSync(fileName, content);
-        const extended = fileName === 'tsconfig.json' ? `${tsconfigPresetOf(resolvedFeatures)}.json` : 'tsconfig.json and test.json';
-        console.log(`Generated ${fileName} (extends ${extended})`);
+        if (fileName === 'tsconfig.json')
+            console.log(`Generated ${fileName} (extends ${tsconfigPresetOf(resolvedFeatures)}.json)`);
+        else if (fileName === 'tsconfig.test.json')
+            console.log(`Generated ${fileName} (extends tsconfig.json and test.json)`);
+        else
+            console.log(`Generated ${fileName}`);
     }
-    // Generate .gitignore via CUE
-    const gitignoreContent = generateGitignore(resolvedFeatures);
-    writeFileSync('.gitignore', gitignoreContent);
-    console.log('Generated .gitignore');
     // Setup CUE module if cue feature is present
     if (resolvedFeatures.includes('cue')) {
         setupCueMod();
@@ -440,7 +400,7 @@ function selfGenerate() {
     const resolvedFeatures = resolveFeatures(deps, manifest);
     console.log(`Self-generate: resolved features: ${resolvedFeatures.join(', ')}`);
     const existingPkg = loadPackageJson(packageRoot);
-    const packageJson = generatePackageJson(resolvedFeatures, existingPkg, packageRoot);
+    const packageJson = generatePackageJson(resolvedFeatures, existingPkg);
     const outputPath = resolve(packageRoot, 'package.json');
     writeFileSync(outputPath, JSON.stringify(packageJson, null, 2) + '\n');
     console.log(`Generated ${outputPath}`);

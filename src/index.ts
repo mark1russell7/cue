@@ -3,14 +3,16 @@
  *
  * Most users run the `cue-config` CLI. This entry point gives the same feature data to code: the
  * features and presets of `features.json`, the resolution of the features that a project needs,
- * and the paths of the configuration files in the package.
+ * and the paths of the configuration files in the package. It also gives the core of `generate`
+ * (`core.ts`). The entry point `@mark1russell7/cue/core` gives only that core, with no Node.js module.
  */
 
 import { resolve } from 'node:path';
-import { packageRoot, readFeatures, resolveFeatures, type FeaturesManifest } from './features.js';
+import { resolveFeatures, type FeaturesManifest } from './core.js';
+import { packageRoot, readFeatures } from './features.js';
 
-export { packageRoot, readFeatures, resolveFeatures };
-export type { Feature, FeaturesManifest } from './features.js';
+export { packageRoot, readFeatures };
+export * from './core.js';
 
 /**
  * The names of the tsconfig presets in `ts/config` (for `"extends": "@mark1russell7/cue/ts/config/<name>.json"`).

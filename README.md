@@ -3,6 +3,7 @@
 [![npm version](https://img.shields.io/npm/v/@mark1russell7/cue.svg)](https://www.npmjs.com/package/@mark1russell7/cue)
 [![License: MIT](https://img.shields.io/npm/l/@mark1russell7/cue.svg)](./LICENSE)
 [![Part of client](https://img.shields.io/badge/part%20of-client-1f3fbf)](https://mark1russell7.github.io/client/)
+[![Site](https://img.shields.io/badge/site-playground-0f7f56)](https://mark1russell7.github.io/cue/)
 
 > Generate `package.json`, `tsconfig.json` and `.gitignore` from a list of features, validated by CUE.
 
@@ -254,6 +255,26 @@ import features from "@mark1russell7/cue/features.json";
 // Access dependency schemas
 import schema from "@mark1russell7/cue/dependencies/schema.json";
 ```
+
+#### The core (`@mark1russell7/cue/core`)
+
+The entry `@mark1russell7/cue/core` has the steps of `generate` that do not need Node.js or CUE. The CLI uses them, and the site starts them in a browser.
+
+```typescript
+import { resolveFeatures, cueFiles, cueEvalArgs, generateFiles } from "@mark1russell7/cue/core";
+import features from "@mark1russell7/cue/features.json";
+
+const resolved = resolveFeatures(["ts", "node"], features);
+// The CUE files and the arguments of `cue eval` for package.json
+const args = cueEvalArgs(cueFiles(resolved, "package", (file) => existsInNpmPackage(file)), "package");
+// The output of `cue eval` for package.json and .gitignore gives the text of each file
+const files = generateFiles(resolved, { packageJson, patterns }, existingPackageJson);
+```
+
+- `resolveFeatures` gives the requested features and each feature that they need.
+- `cueFiles` and `cueEvalArgs` give the CUE files of a set of features and the arguments of `cue eval`.
+- `mergePackageJson` merges the generated `package.json` into the existing file. It keeps the name, the version and your scripts.
+- `generateFiles` gives the text of `package.json`, `tsconfig.json`, `tsconfig.test.json` (with the `test` feature) and `.gitignore`.
 
 ## Feature System
 
