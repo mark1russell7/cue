@@ -318,7 +318,7 @@ graph LR
 
 ### Type-check the tests (the `test` feature)
 
-The presets of `tsconfig.json` do not read the tests (`lib.json` excludes `*.test.ts` and `*.spec.ts`). The `test` feature adds a second configuration that reads them. The feature is off by default. Without it, `generate` writes the same files as version 1.0.2.
+The presets of `tsconfig.json` do not read the tests (`lib.json` excludes `*.test.ts` and `*.spec.ts`). The `test` feature adds a second configuration that reads them. The feature is off by default. Without it, `generate` writes the same files as version 1.0.2. The one difference is the range of the `cue` feature, which is `^2.1.0` since 2.1.1.
 
 To turn on the feature, run these commands in the package folder:
 
