@@ -1,5 +1,17 @@
 # Change history
 
+## 2.0.0
+
+MAJOR: the base preset refuses the TypeScript syntax that Node cannot strip.
+
+### Breaking changes
+
+- `base.json` sets `erasableSyntaxOnly`. Each preset extends it. Thus `tsc` gives the error TS1294 for an `enum`, a `namespace` with code, and a parameter property, for example `constructor(private x: number)`.
+- The reason: Node runs a `.ts` file only when it can strip the types. With such syntax, `node` stops at the start with `ERR_UNSUPPORTED_TYPESCRIPT_SYNTAX`, but `tsc` and `vitest` accept the file. On 2026-11-03 a parameter property stopped a scheduled run of a tool at the start, and its tests passed.
+- To update: change an `enum` to an object `as const` and a union type of its values. Change a parameter property to a field and an assignment in the constructor.
+- A package that cannot change sets `"erasableSyntaxOnly": false` in its own `tsconfig.json`. The rule `cue-preset` of `@mark1russell7/conventions` reports it, so the package also keeps an exception with its reason.
+- The schema of a `tsconfig.json` has the option `erasableSyntaxOnly`.
+
 ## 1.1.0
 
 MINOR: new opt-in test preset.

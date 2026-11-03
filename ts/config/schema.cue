@@ -76,6 +76,7 @@ import "strings"
 	noEmitOnError?:        bool
 	isolatedDeclarations?: bool
 	isolatedModules?:      bool
+	erasableSyntaxOnly?:   bool
 	preserveConstEnums?:   bool
 	stripInternal?:        bool
 

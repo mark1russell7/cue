@@ -230,7 +230,7 @@ import viteConfig from "@mark1russell7/cue/ts/config/vite.json";
 ```
 
 **Available TypeScript Configs:**
-- `base.json` - Base TypeScript configuration
+- `base.json` - Base TypeScript configuration. It sets `erasableSyntaxOnly`, so `tsc` refuses the syntax that Node cannot strip (`enum`, `namespace` with code, parameter properties). Node runs a `.ts` file only when it can strip the types.
 - `esm.json` - ESM module configuration
 - `cjs.json` - CommonJS configuration
 - `lib.json` - Library configuration
