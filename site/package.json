@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json.schemastore.org/package",
+  "name": "@cue/site",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "The GitHub Pages site of cue: pick features, and see the files that cue-config generate writes, with the feature of each line.",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "typecheck": "tsc -p tsconfig.json && tsc -p tsconfig.test.json",
+    "cue-table": "node scripts/cue-table.ts",
+    "check:cue-table": "node scripts/cue-table.ts --check"
+  },
+  "dependencies": {
+    "@mark1russell7/cue": "workspace:*",
+    "@mark1russell7/site-pages": "^0.1.10"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.4",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.5",
+    "vitest": "^5.0.3"
+  }
+}

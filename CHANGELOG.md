@@ -1,5 +1,17 @@
 # Change history
 
+## 2.1.0
+
+MINOR: the new entry point `@mark1russell7/cue/core`.
+
+### Functions
+
+- The entry `@mark1russell7/cue/core` has the steps of `generate` that do not need Node.js or CUE. A browser can start it.
+- It has `resolveFeatures`, `mergePackageJson`, `generateTsconfigFiles` and `tsconfigPresetOf`, which moved from `features.ts` and `generate.ts`. The old entry points export them too.
+- It has the new functions `cueFileOf`, `cueFiles`, `cueEvalArgs`, `featureToFieldName`, `gitignoreText`, `dependenciesJsonText` and `generateFiles`, and the object `cueTargets`.
+- The CLI uses the core. `generate` writes the same files as 2.0.0.
+- The new site at `https://mark1russell7.github.io/cue/` starts the core in the browser. A browser cannot start CUE, so the site reads a record of the output of `cue eval`. CI makes the record again and compares it.
+
 ## 2.0.0
 
 MAJOR: the base preset refuses the TypeScript syntax that Node cannot strip.

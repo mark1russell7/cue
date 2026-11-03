@@ -10,6 +10,7 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { generateTsconfigFiles, linkCuePackage, mergePackageJson } from '../dist/generate.js';
 import { readFeatures, resolveFeatures } from '../dist/features.js';
+import { cueEvalArgs, cueFileOf, cueFiles, cueTargets, dependenciesJsonText, generateFiles, gitignoreText } from '../dist/core.js';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -296,5 +297,57 @@ describe('cue-config generate', { skip: hasCue ? false : 'the cue CLI is not ins
     assert.equal(pkg.scripts.typecheck, 'tsc --noEmit && tsc -p tsconfig.test.json');
     assert.equal(pkg.scripts.test, 'vitest run');
     assert.equal(pkg.scripts.lint, 'eslint .');
+  });
+});
+
+describe('the core entry (@mark1russell7/cue/core)', () => {
+  const manifest = readFeatures();
+  const inFolder = (target) => (file) => existsSync(join(root, cueTargets[target].dir, file));
+
+  it('imports no module of Node.js, so a browser can start it', () => {
+    const text = readFileSync(join(root, 'dist', 'core.js'), 'utf-8');
+    assert.doesNotMatch(text, /\bfrom\s+['"]/);
+    assert.doesNotMatch(text, /\bimport\s*\(/);
+  });
+
+  it('is an entry point of the package', () => {
+    const pkg = JSON.parse(readFileSync(join(root, 'package.json'), 'utf-8'));
+    assert.deepEqual(pkg.exports['./core'], { types: './dist/core.d.ts', import: './dist/core.js' });
+  });
+
+  it('gives base.cue, then the CUE file of each feature that has one', () => {
+    const resolved = resolveFeatures(['vite-react', 'test'], manifest);
+    const files = cueFiles(resolved, 'package', inFolder('package'));
+    assert.equal(files[0], 'base.cue');
+    assert.ok(files.includes('viteReact.cue'), files.join());
+    assert.ok(!files.includes('git.cue'), files.join());
+    assert.deepEqual(cueFiles(['git', 'npm'], 'ignore', inFolder('ignore')), ['base.cue', 'npm.cue']);
+    assert.equal(cueFileOf('node-cjs', 'package'), 'nodeCjs.cue');
+    assert.equal(cueFileOf('node-cjs', 'ignore'), 'node-cjs.cue');
+  });
+
+  it('gives the arguments of cue eval for each target', () => {
+    assert.deepEqual(cueEvalArgs(['base.cue', 'ts.cue'], 'package'), ['eval', 'base.cue', 'ts.cue', '-e', 'output', '--out', 'json']);
+    assert.deepEqual(cueEvalArgs(['base.cue'], 'ignore'), ['eval', 'base.cue', '-e', 'patterns', '--out', 'json']);
+    assert.equal(cueTargets.package.dir, 'npm/package');
+    assert.equal(cueTargets.ignore.dir, 'git/ignore');
+  });
+
+  it('makes the files of generate from the output of cue eval', () => {
+    const resolved = resolveFeatures(['node', 'test'], manifest);
+    const cue = { packageJson: { scripts: { build: 'tsc -b' } }, patterns: ['dist/', 'node_modules/'] };
+    const files = generateFiles(resolved, cue, { name: 'x', version: '1.0.0' });
+    assert.deepEqual(Object.keys(files).sort(), ['.gitignore', 'package.json', 'tsconfig.json', 'tsconfig.test.json']);
+    assert.equal(JSON.parse(files['package.json']).name, 'x');
+    assert.match(files['tsconfig.json'], /ts\/config\/node\.json/);
+    assert.equal(files['tsconfig.test.json'], TSCONFIG_TEST);
+    assert.equal(files['.gitignore'], 'dist/\nnode_modules/\n');
+    assert.equal(gitignoreText(cue.patterns), files['.gitignore']);
+  });
+
+  it('writes dependencies.json as JSON with a new line at the end', () => {
+    const text = dependenciesJsonText(['ts', 'node']);
+    assert.ok(text.endsWith('\n'));
+    assert.deepEqual(JSON.parse(text), { $schema: './node_modules/@mark1russell7/cue/dependencies/schema.json', dependencies: ['ts', 'node'] });
   });
 });

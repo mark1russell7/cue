@@ -29,7 +29,9 @@ jobs:
       # The install also starts "prepare", which builds dist/ (other repositories install cue from git)
       scripts: build typecheck test
       node-versions: '["24", "26"]'
-      # The CLI starts, and npm pack shows the files of the tarball
+      # The CLI starts, and npm pack shows the files of the tarball. Then the record of cue eval of the
+      # site gets a check: it is the output of the CUE files of this commit.
       run: |
         node dist/cli.js --help
         npm pack --dry-run
+        pnpm --filter @cue/site run check:cue-table
