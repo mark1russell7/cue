@@ -1,5 +1,22 @@
 # Change history
 
+## 2.1.1
+
+PATCH: the `cue` feature gives a current range, and CI starts the conventions check. No export changes.
+
+### Fixes
+
+- The `cue` feature gives the devDependency `"@mark1russell7/cue": "^2.1.0"`, not `"^1.0.0"`. Thus a new package gets the current presets.
+- The record `site/src/cue-table.json` and the fixture `test/fixtures/generate-1.0.2.json` have the new range.
+
+### Repository
+
+- CI starts `check:conventions` of `@mark1russell7/conventions`.
+- The test file `test/generate.test.mjs` is now `test/generate.test.ts`. The new `tsconfig.test.json` type-checks it, and `typecheck` starts it.
+- A push run of `ci.yml` and `security.yml` finishes. A newer push cancels only the run of a pull request.
+- The schedules of `security.yml` and `pages.yml` start at the minutes of the rule `runner-budget`.
+- `pnpm-workspace.yaml` sets the trust policy `no-downgrade` for the versions of the last 7 days.
+
 ## 2.1.0
 
 MINOR: the new entry point `@mark1russell7/cue/core`.

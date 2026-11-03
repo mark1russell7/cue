@@ -8,16 +8,61 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { generateTsconfigFiles, linkCuePackage, mergePackageJson } from '../dist/generate.js';
+import { generateTsconfigFiles, linkCuePackage, mergePackageJson, type PackageJson } from '../dist/generate.js';
 import { readFeatures, resolveFeatures } from '../dist/features.js';
-import { cueEvalArgs, cueFileOf, cueFiles, cueTargets, dependenciesJsonText, generateFiles, gitignoreText } from '../dist/core.js';
+import { cueEvalArgs, cueFileOf, cueFiles, cueTargets, dependenciesJsonText, generateFiles, gitignoreText, type CueTarget } from '../dist/core.js';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
-/** The cases of test/fixtures: a feature set and an optional existing package.json, by name. */
-const cases = JSON.parse(readFileSync(join(root, 'test', 'fixtures', 'generate-cases.json'), 'utf-8'));
-/** The files that cue-config 1.0.2 generated for each case (made with the 1.0.2 build). */
-const files102 = JSON.parse(readFileSync(join(root, 'test', 'fixtures', 'generate-1.0.2.json'), 'utf-8'));
+/** One case of test/fixtures: a feature set and an optional existing package.json. */
+interface Case {
+  features: string[];
+  packageJson?: PackageJson;
+}
+
+/** The generated files of one case, by file name. */
+type Files = Record<string, string>;
+
+/** The cases of test/fixtures, by name. */
+const cases = JSON.parse(readFileSync(join(root, 'test', 'fixtures', 'generate-cases.json'), 'utf-8')) as Record<string, Case>;
+/**
+ * The files that cue-config 1.0.2 generated for each case (made with the 1.0.2 build). Since 2.1.1, the
+ * cue feature gives the range ^2.1.0, so the fixture has that range in place of ^1.0.0.
+ */
+const files102 = JSON.parse(readFileSync(join(root, 'test', 'fixtures', 'generate-1.0.2.json'), 'utf-8')) as Record<string, Files>;
+
+/** This function gives the files of a case of the fixture. It throws when the fixture does not have the case. */
+function filesOf(name: string): Files {
+  const files = files102[name];
+  if (files === undefined) throw new Error(`test/fixtures/generate-1.0.2.json does not have the case "${name}"`);
+  return files;
+}
+
+/** This function gives a case of test/fixtures. It throws when the fixture does not have the case. */
+function caseOf(name: string): Case {
+  const c = cases[name];
+  if (c === undefined) throw new Error(`test/fixtures/generate-cases.json does not have the case "${name}"`);
+  return c;
+}
+
+/** The scripts of a package.json. */
+function scriptsOf(pkg: PackageJson): unknown {
+  return pkg['scripts'];
+}
+
+/** The parts of a package.json that the tests read. */
+interface PackageJsonOutput {
+  type?: string;
+  exports: Record<string, unknown>;
+  scripts: { typecheck?: string; test?: string; lint?: string };
+}
+
+/** This function gives the package.json of a set of generated files. It throws when the set has no package.json. */
+function packageOf(files: Files): PackageJsonOutput {
+  const text = files['package.json'];
+  if (text === undefined) throw new Error('the files have no package.json');
+  return JSON.parse(text) as PackageJsonOutput;
+}
 
 /** The tsconfig.test.json of the test feature. */
 const TSCONFIG_TEST = `{
@@ -30,7 +75,7 @@ const TSCONFIG_TEST = `{
 `;
 
 /** This function removes a temporary folder. It removes the links first, so rmSync does not follow them. */
-function removeTemp(dir, links) {
+function removeTemp(dir: string, links: readonly string[]): void {
   for (const link of links) {
     if (lstatSync(link, { throwIfNoEntry: false })) unlinkSync(link);
   }
@@ -41,21 +86,21 @@ describe('mergePackageJson', () => {
   it('gives the generated type "module" to each package', () => {
     // The ts feature compiles ES modules, so a CommonJS package (for example from npm init) gets "module"
     const generated = { name: 'x', type: 'module', main: './dist/index.js' };
-    assert.equal(mergePackageJson(generated, { name: 'a', type: 'commonjs' }).type, 'module');
-    assert.equal(mergePackageJson(generated, { name: 'a', type: 'module' }).type, 'module');
-    assert.equal(mergePackageJson(generated, { name: 'a' }).type, 'module');
+    assert.equal(mergePackageJson(generated, { name: 'a', type: 'commonjs' })['type'], 'module');
+    assert.equal(mergePackageJson(generated, { name: 'a', type: 'module' })['type'], 'module');
+    assert.equal(mergePackageJson(generated, { name: 'a' })['type'], 'module');
   });
 
   it('keeps the type of an existing package for the generated type "commonjs" (node-cjs)', () => {
     const generated = { name: 'x', type: 'commonjs', main: './dist/index.js' };
-    assert.equal(mergePackageJson(generated, { name: 'a', type: 'module' }).type, 'module');
-    assert.equal(mergePackageJson(generated, { name: 'a', type: 'commonjs' }).type, 'commonjs');
-    assert.equal(mergePackageJson(generated, { name: 'a' }).type, 'commonjs');
-    assert.equal(mergePackageJson(generated, null).type, 'commonjs');
+    assert.equal(mergePackageJson(generated, { name: 'a', type: 'module' })['type'], 'module');
+    assert.equal(mergePackageJson(generated, { name: 'a', type: 'commonjs' })['type'], 'commonjs');
+    assert.equal(mergePackageJson(generated, { name: 'a' })['type'], 'commonjs');
+    assert.equal(mergePackageJson(generated, null)['type'], 'commonjs');
   });
 
   it('keeps the type of a package when the features generate no type', () => {
-    assert.equal(mergePackageJson({ name: 'x' }, { name: 'a', type: 'commonjs' }).type, 'commonjs');
+    assert.equal(mergePackageJson({ name: 'x' }, { name: 'a', type: 'commonjs' })['type'], 'commonjs');
   });
 
   it('keeps the entry points, merges the scripts and puts $schema first', () => {
@@ -65,28 +110,28 @@ describe('mergePackageJson', () => {
     );
     assert.deepEqual(Object.keys(merged)[0], '$schema');
     assert.equal(merged.name, 'a');
-    assert.equal(merged.main, './lib/a.js');
-    assert.deepEqual(merged.scripts, { build: 'tsc -b', test: 'node --test' });
-    assert.deepEqual(merged.engines, { node: '>=22' });
+    assert.equal(merged['main'], './lib/a.js');
+    assert.deepEqual(scriptsOf(merged), { build: 'tsc -b', test: 'node --test' });
+    assert.deepEqual(merged['engines'], { node: '>=22' });
   });
 
   it('gives the new generated value to a script with an old generated value (the test feature)', () => {
     const generated = { scripts: { typecheck: 'tsc --noEmit && tsc -p tsconfig.test.json', test: 'vitest run' } };
     const merged = mergePackageJson(generated, { scripts: { typecheck: 'tsc --noEmit', test: 'vitest run --passWithNoTests' } });
-    assert.deepEqual(merged.scripts, generated.scripts);
+    assert.deepEqual(scriptsOf(merged), generated.scripts);
   });
 
   it('keeps a script of the package that is not an old generated value', () => {
     const generated = { scripts: { typecheck: 'tsc --noEmit && tsc -p tsconfig.test.json', test: 'vitest run' } };
     const existing = { scripts: { typecheck: 'tsc --noEmit -p tsconfig.build.json', test: 'vitest run --exclude e2e' } };
-    assert.deepEqual(mergePackageJson(generated, existing).scripts, existing.scripts);
+    assert.deepEqual(scriptsOf(mergePackageJson(generated, existing)), existing.scripts);
   });
 
   it('changes no script without the test feature (the generated values are the old values)', () => {
     const generated = { scripts: { build: 'tsc -b', typecheck: 'tsc --noEmit', test: 'vitest run --passWithNoTests' } };
     const existing = { scripts: { typecheck: 'tsc --noEmit', test: 'vitest run', lint: 'eslint .' } };
     const merged = mergePackageJson(generated, existing);
-    assert.equal(JSON.stringify(merged.scripts), JSON.stringify({ build: 'tsc -b', typecheck: 'tsc --noEmit', test: 'vitest run', lint: 'eslint .' }));
+    assert.equal(JSON.stringify(scriptsOf(merged)), JSON.stringify({ build: 'tsc -b', typecheck: 'tsc --noEmit', test: 'vitest run', lint: 'eslint .' }));
   });
 });
 
@@ -95,8 +140,9 @@ describe('generateTsconfigFiles', () => {
 
   it('gives the tsconfig.json of 1.0.2 and no tsconfig.test.json without the test feature', () => {
     for (const [name, c] of Object.entries(cases)) {
-      const expected = {};
-      if (files102[name]['tsconfig.json'] !== undefined) expected['tsconfig.json'] = files102[name]['tsconfig.json'];
+      const expected: Files = {};
+      const tsconfig = filesOf(name)['tsconfig.json'];
+      if (tsconfig !== undefined) expected['tsconfig.json'] = tsconfig;
       assert.deepEqual(generateTsconfigFiles(resolveFeatures(c.features, manifest)), expected, name);
     }
   });
@@ -104,7 +150,7 @@ describe('generateTsconfigFiles', () => {
   it('adds tsconfig.test.json with the test feature', () => {
     const files = generateTsconfigFiles(resolveFeatures(['node', 'test'], manifest));
     assert.deepEqual(Object.keys(files), ['tsconfig.json', 'tsconfig.test.json']);
-    assert.equal(files['tsconfig.json'], files102['node']['tsconfig.json']);
+    assert.equal(files['tsconfig.json'], filesOf('node')['tsconfig.json']);
     assert.equal(files['tsconfig.test.json'], TSCONFIG_TEST);
   });
 
@@ -149,7 +195,7 @@ describe('the preset ts/config/test.json', () => {
       writeFileSync(join(dir, 'test', 'helper.ts'), 'export const c: number = "c";\n');
       writeFileSync(join(dir, 'vitest.config.ts'), 'export const d: boolean = 1;\n');
       const tsc = join(root, 'node_modules', 'typescript', 'bin', 'tsc');
-      const run = (...args) => spawnSync(process.execPath, [tsc, ...args, '--pretty', 'false'], { cwd: dir, encoding: 'utf-8' });
+      const run = (...args: string[]) => spawnSync(process.execPath, [tsc, ...args, '--pretty', 'false'], { cwd: dir, encoding: 'utf-8' });
 
       // tsconfig.test.json reads the tests: ${configDir} is the package folder
       const result = run('-p', 'tsconfig.test.json');
@@ -168,7 +214,7 @@ describe('the preset ts/config/test.json', () => {
 
 describe('linkCuePackage', () => {
   /** A new temporary folder with two package versions, "v1" and "v2", and the path of the link. */
-  function setup() {
+  function setup(): { dir: string; link: string } {
     const dir = mkdtempSync(join(tmpdir(), 'cue-link-'));
     for (const version of ['v1', 'v2']) {
       for (const sub of ['ts', 'npm', 'git']) mkdirSync(join(dir, version, sub), { recursive: true });
@@ -219,8 +265,8 @@ const hasCue = spawnSync('cue', ['version'], { stdio: 'ignore' }).status === 0;
 
 describe('the CUE files of the features', { skip: hasCue ? false : 'the cue CLI is not installed' }, () => {
   /** The package.json that CUE generates for these feature files. */
-  const output = (...files) =>
-    JSON.parse(execFileSync('cue', ['eval', 'base.cue', ...files, '-e', 'output', '--out', 'json'], { cwd: join(root, 'npm', 'package'), encoding: 'utf-8' }));
+  const output = (...files: string[]): PackageJsonOutput =>
+    JSON.parse(execFileSync('cue', ['eval', 'base.cue', ...files, '-e', 'output', '--out', 'json'], { cwd: join(root, 'npm', 'package'), encoding: 'utf-8' })) as PackageJsonOutput;
 
   it('gives the type "module" for ts and node', () => {
     assert.equal(output('ts.cue').type, 'module');
@@ -248,13 +294,13 @@ describe('cue-config generate', { skip: hasCue ? false : 'the cue CLI is not ins
   const fileNames = ['package.json', 'tsconfig.json', 'tsconfig.test.json', '.gitignore'];
 
   /** The files that `cue-config generate` writes in a new folder for these features (and an existing package.json). */
-  function generate(features, packageJson) {
+  function generate(features: readonly string[], packageJson?: PackageJson): Files {
     const dir = mkdtempSync(join(tmpdir(), 'cue-generate-'));
     try {
       writeFileSync(join(dir, 'dependencies.json'), JSON.stringify({ dependencies: features }, null, 2) + '\n');
       if (packageJson) writeFileSync(join(dir, 'package.json'), JSON.stringify(packageJson, null, 2) + '\n');
       execFileSync(process.execPath, [join(root, 'dist', 'cli.js'), 'generate'], { cwd: dir, stdio: 'pipe' });
-      const files = {};
+      const files: Files = {};
       for (const name of fileNames) {
         if (existsSync(join(dir, name))) files[name] = readFileSync(join(dir, name), 'utf-8');
       }
@@ -272,28 +318,28 @@ describe('cue-config generate', { skip: hasCue ? false : 'the cue CLI is not ins
 
   it('writes tsconfig.test.json and the scripts of the test feature', () => {
     const files = generate(['ts', 'node', 'cue', 'vitest', 'test']);
-    const before = files102['ts, node, cue, vitest'];
+    const before = filesOf('ts, node, cue, vitest');
     assert.equal(files['tsconfig.json'], before['tsconfig.json']);
     assert.equal(files['tsconfig.test.json'], TSCONFIG_TEST);
     assert.equal(files['.gitignore'], before['.gitignore']);
-    const pkg = JSON.parse(files['package.json']);
+    const pkg = packageOf(files);
     assert.equal(pkg.scripts.typecheck, 'tsc --noEmit && tsc -p tsconfig.test.json');
     assert.equal(pkg.scripts.test, 'vitest run');
     // Only the two scripts change
-    const old = JSON.parse(before['package.json']);
+    const old = packageOf(before);
     assert.deepEqual({ ...pkg, scripts: { ...pkg.scripts, typecheck: '', test: '' } }, { ...old, scripts: { ...old.scripts, typecheck: '', test: '' } });
   });
 
   it('gives the scripts of the test feature to an existing package with the old generated scripts', () => {
-    const c = cases['an existing package with the old defaults (ts, vitest)'];
-    const pkg = JSON.parse(generate([...c.features, 'test'], c.packageJson)['package.json']);
+    const c = caseOf('an existing package with the old defaults (ts, vitest)');
+    const pkg = packageOf(generate([...c.features, 'test'], c.packageJson));
     assert.equal(pkg.scripts.typecheck, 'tsc --noEmit && tsc -p tsconfig.test.json');
     assert.equal(pkg.scripts.test, 'vitest run');
   });
 
   it('keeps the other scripts of an existing package with the test feature', () => {
-    const c = cases['an existing package (ts, node, cue, vitest)'];
-    const pkg = JSON.parse(generate([...c.features, 'test'], c.packageJson)['package.json']);
+    const c = caseOf('an existing package (ts, node, cue, vitest)');
+    const pkg = packageOf(generate([...c.features, 'test'], c.packageJson));
     assert.equal(pkg.scripts.typecheck, 'tsc --noEmit && tsc -p tsconfig.test.json');
     assert.equal(pkg.scripts.test, 'vitest run');
     assert.equal(pkg.scripts.lint, 'eslint .');
@@ -302,7 +348,7 @@ describe('cue-config generate', { skip: hasCue ? false : 'the cue CLI is not ins
 
 describe('the core entry (@mark1russell7/cue/core)', () => {
   const manifest = readFeatures();
-  const inFolder = (target) => (file) => existsSync(join(root, cueTargets[target].dir, file));
+  const inFolder = (target: CueTarget) => (file: string) => existsSync(join(root, cueTargets[target].dir, file));
 
   it('imports no module of Node.js, so a browser can start it', () => {
     const text = readFileSync(join(root, 'dist', 'core.js'), 'utf-8');
@@ -311,7 +357,7 @@ describe('the core entry (@mark1russell7/cue/core)', () => {
   });
 
   it('is an entry point of the package', () => {
-    const pkg = JSON.parse(readFileSync(join(root, 'package.json'), 'utf-8'));
+    const pkg = JSON.parse(readFileSync(join(root, 'package.json'), 'utf-8')) as PackageJsonOutput;
     assert.deepEqual(pkg.exports['./core'], { types: './dist/core.d.ts', import: './dist/core.js' });
   });
 
@@ -338,8 +384,8 @@ describe('the core entry (@mark1russell7/cue/core)', () => {
     const cue = { packageJson: { scripts: { build: 'tsc -b' } }, patterns: ['dist/', 'node_modules/'] };
     const files = generateFiles(resolved, cue, { name: 'x', version: '1.0.0' });
     assert.deepEqual(Object.keys(files).sort(), ['.gitignore', 'package.json', 'tsconfig.json', 'tsconfig.test.json']);
-    assert.equal(JSON.parse(files['package.json']).name, 'x');
-    assert.match(files['tsconfig.json'], /ts\/config\/node\.json/);
+    assert.equal((JSON.parse(files['package.json'] ?? '{}') as PackageJson).name, 'x');
+    assert.match(files['tsconfig.json'] ?? '', /ts\/config\/node\.json/);
     assert.equal(files['tsconfig.test.json'], TSCONFIG_TEST);
     assert.equal(files['.gitignore'], 'dist/\nnode_modules/\n');
     assert.equal(gitignoreText(cue.patterns), files['.gitignore']);
