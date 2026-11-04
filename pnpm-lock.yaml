@@ -9,8 +9,8 @@ importers:
   .:
     devDependencies:
       '@mark1russell7/conventions':
-        specifier: ^0.26.0
-        version: 0.26.0
+        specifier: ^0.29.1
+        version: 0.29.1
       '@types/node':
         specifier: ^22.0.0
         version: 22.19.11
@@ -24,8 +24,8 @@ importers:
         specifier: workspace:*
         version: link:..
       '@mark1russell7/site-pages':
-        specifier: ^0.1.10
-        version: 0.1.10
+        specifier: ^0.2.2
+        version: 0.2.2
     devDependencies:
       '@types/node':
         specifier: ^26.6.4
@@ -52,13 +52,21 @@ packages:
   '@jridgewell/trace-mapping@0.3.31':
     resolution: {integrity: sha512-zzNR+SdQSDJzc8joaeP8QQoCQr8NuYx2dIIytl1QeBEZHJ9uW6hebsrYgbz8hJwUQao3TWCMtmfV8Nu1twOLAw==}
 
-  '@mark1russell7/conventions@0.26.0':
-    resolution: {integrity: sha512-waIPrXWmB7DF5qJI74EGvyLh6sWUMzgYCZGG82rOEXsExQcHmlHvmr/O1mYl7Vz4YVFrUjWPfV/SPgRJRjzD4A==}
+  '@mark1russell7/conventions@0.29.1':
+    resolution: {integrity: sha512-Bc8t41QH7H9SiSVmdjepJVD7iHYe35kffZKpkmeQk5oMz8h05o5kY3xUYR/bilVCaXX+hoocKmlbr3PGQjL0lg==}
     engines: {node: '>=22'}
     hasBin: true
 
-  '@mark1russell7/site-pages@0.1.10':
-    resolution: {integrity: sha512-dcMPqlWsxJ+fRvl5cZH01a+/94ujk5ogRfg5puO2JC7pvE5jq1IV48UrcbtP+zcS5r9zMUbvUVz74E9xQYY8FQ==}
+  '@mark1russell7/rigor-generators@0.1.5':
+    resolution: {integrity: sha512-YkABrG6+AV4oZKWoSIayDGxKTqcTMbp/eGa+3u00X09Jv9TfpHFDeqHlEQARMBzJ/kvy/EMNIXQZMGa3Nobuzw==}
+    engines: {node: '>=22'}
+
+  '@mark1russell7/rigor-statistics@0.1.9':
+    resolution: {integrity: sha512-J/hfIHyiVlguOZVfA6/B7L3ReAQAW1xUbT50e4KVxMCOHJfTVC1HIj0u+Qd+Vrn+J1JoDhAF/DJ7Elfpe12gjw==}
+    engines: {node: '>=22'}
+
+  '@mark1russell7/site-pages@0.2.2':
+    resolution: {integrity: sha512-PRUpUdu2bKUDxpObEEU7lZks86WEpvL82OzAtwsoNfx7PCiLbSMUL7y9eFYwQeZf6T07mqHHNcZhUOaozsAo0A==}
     engines: {node: '>=22'}
     hasBin: true
 
@@ -586,9 +594,17 @@ snapshots:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.6.0
 
-  '@mark1russell7/conventions@0.26.0': {}
+  '@mark1russell7/conventions@0.29.1': {}
 
-  '@mark1russell7/site-pages@0.1.10': {}
+  '@mark1russell7/rigor-generators@0.1.5': {}
+
+  '@mark1russell7/rigor-statistics@0.1.9':
+    dependencies:
+      '@mark1russell7/rigor-generators': 0.1.5
+
+  '@mark1russell7/site-pages@0.2.2':
+    dependencies:
+      '@mark1russell7/rigor-statistics': 0.1.9
 
   '@oxc-project/types@0.156.0': {}
 
