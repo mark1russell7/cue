@@ -792,7 +792,6 @@ code.dep {
 table {
   border-collapse: collapse;
   width: 100%;
-  min-width: 40rem;
   font-size: 0.9rem;
 }
 
@@ -814,6 +813,64 @@ th {
   text-transform: uppercase;
   letter-spacing: 0.04em;
   color: var(--muted);
+}
+
+@media (min-width: 768px) {
+  table {
+    min-width: 40rem;
+  }
+}
+
+/* On a phone each row is a card, so a table does not go out of view. */
+@media (max-width: 767px) {
+  thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+
+  table,
+  tbody,
+  tr,
+  td {
+    display: block;
+  }
+
+  tr {
+    padding: 0.5rem 0;
+    border-bottom: 1px solid var(--rule);
+  }
+
+  tbody tr:last-child {
+    border-bottom: 0;
+  }
+
+  td {
+    padding: 0.2rem 0.8rem;
+    border-bottom: 0;
+  }
+
+  td code {
+    overflow-wrap: anywhere;
+  }
+
+  /* The cards have no column heads, so these labels name the columns of the features. */
+  #feature-rows td:nth-child(2)::before {
+    content: "Needs ";
+    color: var(--muted);
+  }
+
+  #feature-rows td:nth-child(3)::before {
+    content: "CUE files ";
+    color: var(--muted);
+  }
+
+  #feature-rows td:nth-child(4)::before {
+    content: "Adds ";
+    color: var(--muted);
+  }
 }
 
 .install {
