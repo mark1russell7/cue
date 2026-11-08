@@ -33,7 +33,7 @@ export function tsconfigPresetPath(name: TsconfigPreset): string {
  * they need. It throws for an unknown preset.
  */
 export function presetFeatures(preset: string, manifest: FeaturesManifest = readFeatures()): string[] {
-  const features = manifest.presets[preset];
+  const features = Object.hasOwn(manifest.presets, preset) ? manifest.presets[preset] : undefined;
   if (!features) {
     throw new Error(`Unknown preset '${preset}'. The presets are: ${Object.keys(manifest.presets).join(', ')}`);
   }

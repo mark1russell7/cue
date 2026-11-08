@@ -1,5 +1,16 @@
 # Change history
 
+## 2.1.2
+
+PATCH: a name of the prototype is not a feature or a preset. No export changes.
+
+### Fixes
+
+- `resolveFeatures` gives a requested name of the prototype (for example `constructor`, `toString` or `__proto__`) to `onUnknown`, and skips it. Before, the name found the prototype, and the function threw a `TypeError`.
+- `presetFeatures` throws the error of an unknown preset for such a name. Before, it threw "not iterable".
+- The commands `init --preset`, `add` and `generate` of `cue-config` refuse such a name as an unknown preset or feature.
+- Each lookup reads only the own keys of `features` and `presets` (`Object.hasOwn`).
+
 ## 2.1.1
 
 PATCH: the `cue` feature gives a current range, and CI starts the conventions check. No export changes.

@@ -10,6 +10,7 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { generateTsconfigFiles, linkCuePackage, mergePackageJson, type PackageJson } from '../dist/generate.js';
 import { readFeatures, resolveFeatures } from '../dist/features.js';
+import { presetFeatures, type FeaturesManifest } from '../dist/index.js';
 import { cueEvalArgs, cueFileOf, cueFiles, cueTargets, dependenciesJsonText, generateFiles, gitignoreText, type CueTarget } from '../dist/core.js';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -395,5 +396,30 @@ describe('the core entry (@mark1russell7/cue/core)', () => {
     const text = dependenciesJsonText(['ts', 'node']);
     assert.ok(text.endsWith('\n'));
     assert.deepEqual(JSON.parse(text), { $schema: './node_modules/@mark1russell7/cue/dependencies/schema.json', dependencies: ['ts', 'node'] });
+  });
+});
+
+describe('a key of the prototype', () => {
+  const manifest = readFeatures();
+  const names = ['constructor', '__proto__', 'toString', 'hasOwnProperty'];
+
+  it('is not a feature: resolveFeatures gives it to onUnknown and skips it', () => {
+    const unknown: string[] = [];
+    assert.deepEqual(resolveFeatures(['ts', ...names], manifest, (name) => unknown.push(name)), resolveFeatures(['ts'], manifest));
+    assert.deepEqual(unknown, names);
+  });
+
+  it('is not a feature of a dependency list either', () => {
+    const own = { features: { a: { dependencies: ['constructor', 'b'] }, b: { dependencies: [] } }, presets: {} };
+    assert.deepEqual(resolveFeatures(['a'], own), ['a', 'b']);
+  });
+
+  it('is not a preset: presetFeatures throws the error of an unknown preset', () => {
+    for (const name of names) assert.throws(() => presetFeatures(name, manifest), /Unknown preset/);
+  });
+
+  it('is a feature when the manifest has it as its own key', () => {
+    const own = { features: { constructor: { dependencies: [] } }, presets: {} } as unknown as FeaturesManifest;
+    assert.deepEqual(resolveFeatures(['constructor'], own), ['constructor']);
   });
 });
