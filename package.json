@@ -91,7 +91,7 @@
     "node": ">=22"
   },
   "devDependencies": {
-    "@mark1russell7/conventions": "^0.36.2",
+    "@mark1russell7/conventions": "^0.37.1",
     "@types/node": "^22.0.0",
     "typescript": "^5.9.3"
   },
