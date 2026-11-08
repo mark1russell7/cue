@@ -19,7 +19,8 @@ export interface FeaturesManifest {
 
 /**
  * This function gives the requested features and all the features that they need (a flood
- * fill). `onUnknown` gets each requested name that the manifest does not have.
+ * fill). `onUnknown` gets each requested name that is not an own key of `manifest.features`,
+ * for example `constructor` or `toString` of the prototype.
  */
 export function resolveFeatures(
   requested: readonly string[],
@@ -33,7 +34,8 @@ export function resolveFeatures(
     const feature = queue.shift()!;
     if (resolved.has(feature)) continue;
 
-    const featureDef = manifest.features[feature];
+    // A key of the prototype (`constructor`, `toString`, `__proto__`) is not a feature
+    const featureDef = Object.hasOwn(manifest.features, feature) ? manifest.features[feature] : undefined;
     if (!featureDef) {
       onUnknown(feature);
       continue;

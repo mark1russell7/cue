@@ -139,7 +139,7 @@ function init(args) {
     const manifest = loadFeatures();
     const parsed = parseArgs(args, ['preset']);
     const presetName = typeof parsed['preset'] === 'string' ? parsed['preset'] : 'lib';
-    const preset = manifest.presets[presetName];
+    const preset = Object.hasOwn(manifest.presets, presetName) ? manifest.presets[presetName] : undefined;
     if (!preset) {
         console.error(`Unknown preset: ${presetName}`);
         console.error(`Available presets: ${Object.keys(manifest.presets).join(', ')}`);
@@ -172,7 +172,7 @@ function add(args) {
         process.exit(1);
     }
     const manifest = loadFeatures();
-    if (!manifest.features[feature]) {
+    if (!Object.hasOwn(manifest.features, feature)) {
         console.error(`Unknown feature: ${feature}`);
         console.error(`Available: ${Object.keys(manifest.features).join(', ')}`);
         process.exit(1);
@@ -247,7 +247,7 @@ function validate() {
     }
     const manifest = loadFeatures();
     for (const feature of deps) {
-        if (!manifest.features[feature]) {
+        if (!Object.hasOwn(manifest.features, feature)) {
             console.error(`Error: Unknown feature '${feature}'`);
             process.exit(1);
         }

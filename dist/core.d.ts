@@ -16,7 +16,8 @@ export interface FeaturesManifest {
 }
 /**
  * This function gives the requested features and all the features that they need (a flood
- * fill). `onUnknown` gets each requested name that the manifest does not have.
+ * fill). `onUnknown` gets each requested name that is not an own key of `manifest.features`,
+ * for example `constructor` or `toString` of the prototype.
  */
 export declare function resolveFeatures(requested: readonly string[], manifest: FeaturesManifest, onUnknown?: (feature: string) => void): string[];
 /** The two outputs of CUE: `package` gives `package.json`, and `ignore` gives `.gitignore`. */
