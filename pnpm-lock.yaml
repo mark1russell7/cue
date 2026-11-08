@@ -9,8 +9,8 @@ importers:
   .:
     devDependencies:
       '@mark1russell7/conventions':
-        specifier: ^0.29.1
-        version: 0.29.1
+        specifier: ^0.36.2
+        version: 0.36.2
       '@types/node':
         specifier: ^22.0.0
         version: 22.19.11
@@ -35,10 +35,10 @@ importers:
         version: 7.0.2
       vite:
         specifier: ^8.3.5
-        version: 8.3.5(@types/node@26.6.6)
+        version: 8.3.5(@types/node@26.6.6)(yaml@2.9.1)
       vitest:
         specifier: ^5.0.3
-        version: 5.1.0(@types/node@26.6.6)(vite@8.3.5(@types/node@26.6.6))
+        version: 5.1.0(@types/node@26.6.6)(vite@8.3.5(@types/node@26.6.6)(yaml@2.9.1))
 
 packages:
 
@@ -52,8 +52,8 @@ packages:
   '@jridgewell/trace-mapping@0.3.31':
     resolution: {integrity: sha512-zzNR+SdQSDJzc8joaeP8QQoCQr8NuYx2dIIytl1QeBEZHJ9uW6hebsrYgbz8hJwUQao3TWCMtmfV8Nu1twOLAw==}
 
-  '@mark1russell7/conventions@0.29.1':
-    resolution: {integrity: sha512-Bc8t41QH7H9SiSVmdjepJVD7iHYe35kffZKpkmeQk5oMz8h05o5kY3xUYR/bilVCaXX+hoocKmlbr3PGQjL0lg==}
+  '@mark1russell7/conventions@0.36.2':
+    resolution: {integrity: sha512-0oc8rTNy7523Um2uyI2lY6QVtdVeOa4+EBC7iZnvTvxfCXHYVgH0cJeEBlV41tip5wIpWFNWeRkQMcmjlsogtg==}
     engines: {node: '>=22'}
     hasBin: true
 
@@ -583,6 +583,11 @@ packages:
     engines: {node: '>=20.11'}
     hasBin: true
 
+  yaml@2.9.1:
+    resolution: {integrity: sha512-3NxN8+78OdzbT7C/WjGsyfPAtJaN3FNDsWxv7Y7mcDsT/oOmgW8BpyQQFFBnvZE3j9Y2Sdz1ULFLezL7Eb2yFw==}
+    engines: {node: '>= 14.6'}
+    hasBin: true
+
 snapshots:
 
   '@jridgewell/resolve-uri@3.1.2': {}
@@ -594,7 +599,9 @@ snapshots:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.6.0
 
-  '@mark1russell7/conventions@0.29.1': {}
+  '@mark1russell7/conventions@0.36.2':
+    dependencies:
+      yaml: 2.9.1
 
   '@mark1russell7/rigor-generators@0.1.5': {}
 
@@ -732,14 +739,14 @@ snapshots:
   '@typescript/typescript-win32-x64@7.0.2':
     optional: true
 
-  '@vitest/mocker@5.1.0(vite@8.3.5(@types/node@26.6.6))':
+  '@vitest/mocker@5.1.0(vite@8.3.5(@types/node@26.6.6)(yaml@2.9.1))':
     dependencies:
       '@jridgewell/trace-mapping': 0.3.31
       '@vitest/spy': 5.1.0
       estree-walker: 3.0.3
       magic-string: 1.4.5
     optionalDependencies:
-      vite: 8.3.5(@types/node@26.6.6)
+      vite: 8.3.5(@types/node@26.6.6)(yaml@2.9.1)
 
   '@vitest/spy@5.1.0': {}
 
@@ -894,7 +901,7 @@ snapshots:
 
   undici-types@8.9.0: {}
 
-  vite@8.3.5(@types/node@26.6.6):
+  vite@8.3.5(@types/node@26.6.6)(yaml@2.9.1):
     dependencies:
       lightningcss: 1.33.0
       picomatch: 4.0.7
@@ -904,11 +911,12 @@ snapshots:
     optionalDependencies:
       '@types/node': 26.6.6
       fsevents: 2.3.3
+      yaml: 2.9.1
 
-  vitest@5.1.0(@types/node@26.6.6)(vite@8.3.5(@types/node@26.6.6)):
+  vitest@5.1.0(@types/node@26.6.6)(vite@8.3.5(@types/node@26.6.6)(yaml@2.9.1)):
     dependencies:
       '@types/chai': 5.2.3
-      '@vitest/mocker': 5.1.0(vite@8.3.5(@types/node@26.6.6))
+      '@vitest/mocker': 5.1.0(vite@8.3.5(@types/node@26.6.6)(yaml@2.9.1))
       chai: 6.3.0
       es-module-lexer: 2.3.2
       expect-type: 1.4.0
@@ -919,7 +927,7 @@ snapshots:
       tinybench: 6.2.3
       tinyexec: 1.3.1
       tinyglobby: 0.2.17
-      vite: 8.3.5(@types/node@26.6.6)
+      vite: 8.3.5(@types/node@26.6.6)(yaml@2.9.1)
       why-is-node-running: 3.2.1
     optionalDependencies:
       '@types/node': 26.6.6
@@ -927,3 +935,5 @@ snapshots:
       - msw
 
   why-is-node-running@3.2.1: {}
+
+  yaml@2.9.1: {}
