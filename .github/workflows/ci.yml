@@ -21,13 +21,11 @@ concurrency:
 
 jobs:
   ci:
-    uses: mark1russell7/template/.github/workflows/reusable-ci.yml@fe8b4a2e892daf3f973909a1830fde55be97ec57 # main
+    uses: mark1russell7/template/.github/workflows/reusable-ci.yml@fc41ae3906e671ae746e9597ccc351a4e7ce8a3b # main
     with:
       # The tests of generate need the cue CLI (the version of cue.mod/module.cue). Without it, they skip.
-      setup: |
-        mkdir -p "$HOME/.local/bin"
-        curl -fsSL https://github.com/cue-lang/cue/releases/download/v0.15.1/cue_v0.15.1_linux_amd64.tar.gz | tar -xz -C "$HOME/.local/bin" cue
-        echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      # The action setup-cue of the template installs it from a cache, or with retries and a sha256 check.
+      cue-version: "0.15.1"
       # The install also starts "prepare", which builds dist/ (other repositories install cue from git)
       scripts: build typecheck check:conventions test
       node-versions: '["24", "26"]'
