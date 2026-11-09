@@ -21,7 +21,7 @@ concurrency:
 
 jobs:
   ci:
-    uses: mark1russell7/template/.github/workflows/reusable-ci.yml@65c760bd1ce1885b2badf6f92706dd396f50b9f4 # main
+    uses: mark1russell7/template/.github/workflows/reusable-ci.yml@d20d75b11120af71eaf6d2f59385c9cd053fff8b # main
     with:
       # The tests of generate need the cue CLI (the version of cue.mod/module.cue). Without it, they skip.
       # The action setup-cue of the template installs it from a cache, or with retries and a sha256 check.
