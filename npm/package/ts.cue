@@ -9,7 +9,7 @@ ts: {
 		types: "./dist/index.d.ts"
 		import: "./dist/index.js"
 	}
-	files: ["dist", "src"]
+	files: ["dist", "!dist/.tsbuildinfo", "src"] // npm does not pack the build info file of tsc
 	sideEffects: false
 	scripts: {
 		build: string | *"tsc -b"  // Default can be overridden by vite
