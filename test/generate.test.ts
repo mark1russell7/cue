@@ -28,7 +28,8 @@ type Files = Record<string, string>;
 const cases = JSON.parse(readFileSync(join(root, 'test', 'fixtures', 'generate-cases.json'), 'utf-8')) as Record<string, Case>;
 /**
  * The files that cue-config 1.0.2 generated for each case (made with the 1.0.2 build). Since 2.1.1, the
- * cue feature gives the range ^2.1.0, so the fixture has that range in place of ^1.0.0.
+ * cue feature gives the range ^2.1.0, so the fixture has that range in place of ^1.0.0. Since 2.1.3, the ts feature
+ * gives "!dist/.tsbuildinfo" after "dist" in files, so the fixture has that entry too.
  */
 const files102 = JSON.parse(readFileSync(join(root, 'test', 'fixtures', 'generate-1.0.2.json'), 'utf-8')) as Record<string, Files>;
 
@@ -56,6 +57,7 @@ interface PackageJsonOutput {
   type?: string;
   exports: Record<string, unknown>;
   scripts: { typecheck?: string; test?: string; lint?: string };
+  files?: string[];
 }
 
 /** This function gives the package.json of a set of generated files. It throws when the set has no package.json. */
@@ -289,6 +291,12 @@ describe('the CUE files of the features', { skip: hasCue ? false : 'the cue CLI 
     // Without vitest, the test feature adds no test script
     assert.equal(output('ts.cue', 'test.cue').scripts.test, undefined);
   });
+
+  it('keeps the build info file of tsc out of the npm package (files has "!dist/.tsbuildinfo" after "dist")', () => {
+    for (const files of [['ts.cue'], ['ts.cue', 'node.cue'], ['ts.cue', 'nodeCjs.cue'], ['ts.cue', 'vite.cue']]) {
+      assert.deepEqual(output(...files).files, ['dist', '!dist/.tsbuildinfo', 'src']);
+    }
+  });
 });
 
 describe('cue-config generate', { skip: hasCue ? false : 'the cue CLI is not installed' }, () => {
@@ -344,6 +352,17 @@ describe('cue-config generate', { skip: hasCue ? false : 'the cue CLI is not ins
     assert.equal(pkg.scripts.typecheck, 'tsc --noEmit && tsc -p tsconfig.test.json');
     assert.equal(pkg.scripts.test, 'vitest run');
     assert.equal(pkg.scripts.lint, 'eslint .');
+  });
+
+  it('gives "!dist/.tsbuildinfo" after "dist" to an existing package that packs dist', () => {
+    const c = caseOf('an existing package (ts, node, cue, vitest)');
+    for (const [files, merged] of [
+      [['dist'], ['dist', '!dist/.tsbuildinfo', 'src']],
+      [['dist', 'README.md'], ['dist', '!dist/.tsbuildinfo', 'src', 'README.md']],
+    ]) {
+      const pkg = packageOf(generate(c.features, { ...c.packageJson, files }));
+      assert.deepEqual(pkg.files, merged);
+    }
   });
 });
 

@@ -1,5 +1,17 @@
 # Change history
 
+## 2.1.3
+
+PATCH: npm does not pack the build info file of tsc. The list `files` of a generated package changes. No export changes.
+
+### Fixes
+
+- The `ts` feature gives `"files": ["dist", "!dist/.tsbuildinfo", "src"]`. The lib preset writes `dist/.tsbuildinfo`, and before, `"dist"` packed it.
+- The file changes on each build, also after a bump of a dev dependency. Then the release stopped, because the packed files of an unchanged version differed from npm.
+- `cue-config generate` puts the negation after `"dist"` in the list `files` of an existing package too.
+- The package `@mark1russell7/cue` does not pack its own `dist/.tsbuildinfo`.
+- The record `site/src/cue-table.json` and the fixture `test/fixtures/generate-1.0.2.json` have the new entry.
+
 ## 2.1.2
 
 PATCH: a name of the prototype is not a feature or a preset. No export changes.
