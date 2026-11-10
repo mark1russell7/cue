@@ -1,0 +1,191 @@
+# The public API of @mark1russell7/cue
+#
+# The names of each entry of the exports field, and the declaration of each name, without comments
+# and private members. The command `api-report check` compares this file with the built .d.ts files.
+# To accept a change of the API, start the build, then `api-report update`, and review the diff.
+
+## . (dist/index.d.ts): names
+
+CueOutput: dist/core.d.ts#CueOutput
+CueTarget: dist/core.d.ts#CueTarget
+Feature: dist/core.d.ts#Feature
+FeaturesManifest: dist/core.d.ts#FeaturesManifest
+PackageJson: dist/core.d.ts#PackageJson
+TsconfigPreset: dist/index.d.ts#TsconfigPreset
+cueEvalArgs: dist/core.d.ts#cueEvalArgs
+cueFileOf: dist/core.d.ts#cueFileOf
+cueFiles: dist/core.d.ts#cueFiles
+cueTargets: dist/core.d.ts#cueTargets
+dependenciesJsonText: dist/core.d.ts#dependenciesJsonText
+featureToFieldName: dist/core.d.ts#featureToFieldName
+generateFiles: dist/core.d.ts#generateFiles
+generateTsconfigFiles: dist/core.d.ts#generateTsconfigFiles
+gitignoreText: dist/core.d.ts#gitignoreText
+mergePackageJson: dist/core.d.ts#mergePackageJson
+packageRoot: dist/features.d.ts#packageRoot
+presetFeatures: dist/index.d.ts#presetFeatures
+readFeatures: dist/features.d.ts#readFeatures
+resolveFeatures: dist/core.d.ts#resolveFeatures
+tsconfigPresetOf: dist/core.d.ts#tsconfigPresetOf
+tsconfigPresetPath: dist/index.d.ts#tsconfigPresetPath
+tsconfigPresets: dist/index.d.ts#tsconfigPresets
+
+## ./core (dist/core.d.ts): names
+
+CueOutput: dist/core.d.ts#CueOutput
+CueTarget: dist/core.d.ts#CueTarget
+Feature: dist/core.d.ts#Feature
+FeaturesManifest: dist/core.d.ts#FeaturesManifest
+PackageJson: dist/core.d.ts#PackageJson
+cueEvalArgs: dist/core.d.ts#cueEvalArgs
+cueFileOf: dist/core.d.ts#cueFileOf
+cueFiles: dist/core.d.ts#cueFiles
+cueTargets: dist/core.d.ts#cueTargets
+dependenciesJsonText: dist/core.d.ts#dependenciesJsonText
+featureToFieldName: dist/core.d.ts#featureToFieldName
+generateFiles: dist/core.d.ts#generateFiles
+generateTsconfigFiles: dist/core.d.ts#generateTsconfigFiles
+gitignoreText: dist/core.d.ts#gitignoreText
+mergePackageJson: dist/core.d.ts#mergePackageJson
+resolveFeatures: dist/core.d.ts#resolveFeatures
+tsconfigPresetOf: dist/core.d.ts#tsconfigPresetOf
+
+## ./ts/config/base.json: no declaration file for ./ts/config/base.json
+
+file ./ts/config/base.json: ts/config/base.json
+
+## ./ts/config/esm.json: no declaration file for ./ts/config/esm.json
+
+file ./ts/config/esm.json: ts/config/esm.json
+
+## ./ts/config/cjs.json: no declaration file for ./ts/config/cjs.json
+
+file ./ts/config/cjs.json: ts/config/cjs.json
+
+## ./ts/config/lib.json: no declaration file for ./ts/config/lib.json
+
+file ./ts/config/lib.json: ts/config/lib.json
+
+## ./ts/config/ts.json: no declaration file for ./ts/config/ts.json
+
+file ./ts/config/ts.json: ts/config/ts.json
+
+## ./ts/config/node.json: no declaration file for ./ts/config/node.json
+
+file ./ts/config/node.json: ts/config/node.json
+
+## ./ts/config/node-cjs.json: no declaration file for ./ts/config/node-cjs.json
+
+file ./ts/config/node-cjs.json: ts/config/node-cjs.json
+
+## ./ts/config/vite.json: no declaration file for ./ts/config/vite.json
+
+file ./ts/config/vite.json: ts/config/vite.json
+
+## ./ts/config/react.json: no declaration file for ./ts/config/react.json
+
+file ./ts/config/react.json: ts/config/react.json
+
+## ./ts/config/test.json: no declaration file for ./ts/config/test.json
+
+file ./ts/config/test.json: ts/config/test.json
+
+## ./dependencies/*: no declaration pattern for ./dependencies/*
+
+file ./dependencies/schema.cue: dependencies/schema.cue
+file ./dependencies/schema.json: dependencies/schema.json
+
+## ./features.json: no declaration file for ./features.json
+
+file ./features.json: features.json
+
+## bin: 1 commands
+
+cue-config: dist/cli.js
+
+## Declarations
+
+### dist/core.d.ts#CueOutput
+export interface CueOutput {
+    packageJson: PackageJson;
+    patterns: readonly string[];
+}
+
+### dist/core.d.ts#CueTarget
+export type CueTarget = 'package' | 'ignore';
+
+### dist/core.d.ts#Feature
+export interface Feature {
+    dependencies: string[];
+}
+
+### dist/core.d.ts#FeaturesManifest
+export interface FeaturesManifest {
+    features: Record<string, Feature>;
+    presets: Record<string, string[]>;
+}
+
+### dist/core.d.ts#PackageJson
+export interface PackageJson {
+    $schema?: string;
+    name?: string;
+    version?: string;
+    [key: string]: unknown;
+}
+
+### dist/core.d.ts#cueEvalArgs
+export declare function cueEvalArgs(files: readonly string[], target: CueTarget): string[];
+
+### dist/core.d.ts#cueFileOf
+export declare function cueFileOf(feature: string, target: CueTarget): string;
+
+### dist/core.d.ts#cueFiles
+export declare function cueFiles(resolvedFeatures: readonly string[], target: CueTarget, has: (file: string) => boolean): string[];
+
+### dist/core.d.ts#cueTargets
+export declare const cueTargets: Readonly<Record<CueTarget, {
+    readonly dir: string;
+    readonly expression: string;
+}>>;
+
+### dist/core.d.ts#dependenciesJsonText
+export declare function dependenciesJsonText(dependencies: readonly string[]): string;
+
+### dist/core.d.ts#featureToFieldName
+export declare function featureToFieldName(feature: string): string;
+
+### dist/core.d.ts#generateFiles
+export declare function generateFiles(resolvedFeatures: readonly string[], cue: CueOutput, existingPkg: PackageJson | null): Record<string, string>;
+
+### dist/core.d.ts#generateTsconfigFiles
+export declare function generateTsconfigFiles(resolvedFeatures: readonly string[]): Record<string, string>;
+
+### dist/core.d.ts#gitignoreText
+export declare function gitignoreText(patterns: readonly string[]): string;
+
+### dist/core.d.ts#mergePackageJson
+export declare function mergePackageJson(generated: PackageJson, existingPkg: PackageJson | null): PackageJson;
+
+### dist/core.d.ts#resolveFeatures
+export declare function resolveFeatures(requested: readonly string[], manifest: FeaturesManifest, onUnknown?: (feature: string) => void): string[];
+
+### dist/core.d.ts#tsconfigPresetOf
+export declare function tsconfigPresetOf(resolvedFeatures: readonly string[]): string;
+
+### dist/features.d.ts#packageRoot
+export declare const packageRoot: string;
+
+### dist/features.d.ts#readFeatures
+export declare function readFeatures(): FeaturesManifest;
+
+### dist/index.d.ts#TsconfigPreset
+export type TsconfigPreset = (typeof tsconfigPresets)[number];
+
+### dist/index.d.ts#presetFeatures
+export declare function presetFeatures(preset: string, manifest?: FeaturesManifest): string[];
+
+### dist/index.d.ts#tsconfigPresetPath
+export declare function tsconfigPresetPath(name: TsconfigPreset): string;
+
+### dist/index.d.ts#tsconfigPresets
+export declare const tsconfigPresets: readonly ["base", "esm", "cjs", "lib", "ts", "node", "node-cjs", "vite", "react", "test"];
