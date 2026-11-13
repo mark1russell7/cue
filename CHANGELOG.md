@@ -1,5 +1,14 @@
 # Change history
 
+## 2.1.4
+
+PATCH: each entry of `exports` of the package has the condition `default` too, and the dev dependencies are current. No API changes.
+
+### Changes
+
+- The entries `.` and `./core` of `exports` give `default` after `import` (the rule exports-require of conventions 0.41.2). A resolver that does not know the condition `import` finds the same file.
+- The dev dependencies `@mark1russell7/api-report` 0.5.5, `@mark1russell7/conventions` 0.41.2 and `@mark1russell7/site-pages` 0.4.7.
+
 ## 2.1.3
 
 PATCH: npm does not pack the build info file of tsc. The list `files` of a generated package changes. No export changes.

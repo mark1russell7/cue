@@ -378,7 +378,7 @@ describe('the core entry (@mark1russell7/cue/core)', () => {
 
   it('is an entry point of the package', () => {
     const pkg = JSON.parse(readFileSync(join(root, 'package.json'), 'utf-8')) as PackageJsonOutput;
-    assert.deepEqual(pkg.exports['./core'], { types: './dist/core.d.ts', import: './dist/core.js' });
+    assert.deepEqual(pkg.exports['./core'], { types: './dist/core.d.ts', import: './dist/core.js', default: './dist/core.js' });
   });
 
   it('gives base.cue, then the CUE file of each feature that has one', () => {
