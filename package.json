@@ -94,7 +94,7 @@
   "devDependencies": {
     "@mark1russell7/api-report": "^0.5.0",
     "@mark1russell7/conventions": "^0.41.0",
-    "@types/node": "^22.0.0",
+    "@types/node": "^26.0.0",
     "@vitest/coverage-v8": "^5.0.3",
     "typescript": "^5.9.3"
   },
