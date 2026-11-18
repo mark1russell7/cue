@@ -30,8 +30,8 @@ importers:
         specifier: workspace:*
         version: link:..
       '@mark1russell7/site-pages':
-        specifier: ^0.7.0
-        version: 0.7.3
+        specifier: ^0.8.0
+        version: 0.8.0
     devDependencies:
       '@types/node':
         specifier: ^26.6.4
@@ -106,8 +106,8 @@ packages:
     resolution: {integrity: sha512-0L075rT+toD6edxEwDdZHiFzHP4+dJrI64Pw5gh9V33VwCfNRUMQY90AooDpMgVcC9cuxHNXegDLSOYU9ZMIlA==}
     engines: {node: '>=22'}
 
-  '@mark1russell7/site-pages@0.7.3':
-    resolution: {integrity: sha512-VCh+TkcmwyUbygViLOUutjX+THZmx6r/BmemSbhhE1MmG50PPqtvJG//6DTigoYBkuGnHdTK1OPHVf/0eMUMCA==}
+  '@mark1russell7/site-pages@0.8.0':
+    resolution: {integrity: sha512-OlqsZfj5yNovI1ysfPJEIVsRnON3KgEP9ELMIH5CO+kP9FY5Vu873oCY+Zja5dKB8wTVgU3YewEcTqH9ncDurg==}
     engines: {node: '>=22'}
     hasBin: true
 
@@ -738,7 +738,7 @@ snapshots:
     dependencies:
       '@mark1russell7/rigor-generators': 0.1.16
 
-  '@mark1russell7/site-pages@0.7.3':
+  '@mark1russell7/site-pages@0.8.0':
     dependencies:
       '@mark1russell7/rigor-statistics': 0.2.4
 
